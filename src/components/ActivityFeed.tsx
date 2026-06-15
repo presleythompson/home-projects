@@ -36,10 +36,10 @@ export default function ActivityFeed({
               {person ? person.name.charAt(0).toUpperCase() : "?"}
             </span>
             <div className="min-w-0">
-              <span className="text-slate-700">
+              <span className="text-stone-700">
                 <span className="font-semibold">{person?.name ?? "Someone"}</span>{" "}
                 {VERB[a.action] ?? a.action}
-                {a.detail ? <span className="text-slate-500"> “{a.detail}”</span> : null}
+                {a.detail ? <span className="text-stone-500"> “{a.detail}”</span> : null}
               </span>
               <span className="text-muted"> · {timeAgo(a.created_at)}</span>
             </div>

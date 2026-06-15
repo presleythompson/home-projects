@@ -15,15 +15,12 @@ export interface Project {
   created_at: string;
 }
 
-export type Recurrence = "daily" | "weekly" | null;
-
 export interface Task {
   id: number;
   project_id: number | null;
   title: string;
   notes: string | null;
   due_date: string | null; // YYYY-MM-DD
-  recurrence: Recurrence;
   assignee_id: number | null;
   is_done: boolean;
   completed_at: string | null;

@@ -34,7 +34,7 @@ export async function POST() {
       title TEXT NOT NULL,
       notes TEXT,
       due_date DATE,
-      recurrence TEXT CHECK (recurrence IN ('daily', 'weekly')),
+      recurrence JSONB,
       assignee_id BIGINT REFERENCES people(id) ON DELETE SET NULL,
       is_done BOOLEAN NOT NULL DEFAULT false,
       completed_at TIMESTAMPTZ,
@@ -93,8 +93,8 @@ export async function POST() {
     for (let t = 0; t < project.tasks.length; t++) {
       const task = project.tasks[t];
       await sql`
-        INSERT INTO tasks (project_id, title, recurrence, sort_order)
-        VALUES (${projectId}, ${task.title}, ${task.recurrence ?? null}, ${t})
+        INSERT INTO tasks (project_id, title, sort_order)
+        VALUES (${projectId}, ${task.title}, ${t})
       `;
     }
   }

@@ -1,31 +1,40 @@
 "use client";
 
-import { useState } from "react";
-import type { Recurrence } from "@/lib/types";
+import { useState, useRef, useEffect } from "react";
+import { dueLabel } from "@/lib/util";
+import DatePicker from "./DatePicker";
 
 export default function AddTaskForm({
   onAdd,
 }: {
-  onAdd: (input: { title: string; due_date: string | null; recurrence: Recurrence }) => void;
+  onAdd: (input: { title: string; due_date: string | null }) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
-  const [due, setDue] = useState("");
-  const [recurrence, setRecurrence] = useState<Recurrence>(null);
+  const [due, setDue] = useState<string | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
 
   function submit() {
     const trimmed = title.trim();
     if (!trimmed) { reset(); return; }
-    onAdd({ title: trimmed, due_date: due || null, recurrence });
+    onAdd({ title: trimmed, due_date: due });
     reset();
   }
 
   function reset() {
     setTitle("");
-    setDue("");
-    setRecurrence(null);
+    setDue(null);
     setOpen(false);
   }
+
+  // Cancel when clicking outside the open form.
+  useEffect(() => {
+    function onDoc(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) reset();
+    }
+    if (open) document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
 
   if (!open) {
     return (
@@ -39,7 +48,7 @@ export default function AddTaskForm({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2 py-1">
+    <div ref={ref} className="flex flex-wrap items-center gap-2 py-1">
       <input
         autoFocus
         value={title}
@@ -49,23 +58,24 @@ export default function AddTaskForm({
           if (e.key === "Escape") reset();
         }}
         placeholder="Task title…"
-        className="flex-1 min-w-[180px] rounded-lg px-3 py-1.5 text-[15px] border border-slate-200 outline-none focus:border-accent-400 bg-white"
+        className="flex-1 min-w-[180px] rounded-lg px-3 py-1.5 text-[15px] border border-stone-200 outline-none focus:border-accent-400 bg-paper"
       />
-      <input
-        type="date"
+      <DatePicker
         value={due}
-        onChange={(e) => setDue(e.target.value)}
-        className="rounded-lg px-2 py-1.5 text-[14px] border border-slate-200 outline-none focus:border-accent-400 bg-white text-slate-600"
+        onChange={setDue}
+        trigger={
+          <span
+            className={`text-[14px] rounded-lg px-2.5 py-1.5 border transition-colors ${
+              due
+                ? "border-accent-200 bg-accent-50 text-accent-700 font-medium"
+                : "border-stone-200 text-stone-500 hover:border-accent-400"
+            }`}
+            title="Set a due date"
+          >
+            {due ? dueLabel(due).text : "📅 Date"}
+          </span>
+        }
       />
-      <select
-        value={recurrence ?? ""}
-        onChange={(e) => setRecurrence((e.target.value || null) as Recurrence)}
-        className="rounded-lg px-2 py-1.5 text-[14px] border border-slate-200 outline-none focus:border-accent-400 bg-white text-slate-600"
-      >
-        <option value="">One-time</option>
-        <option value="daily">Daily</option>
-        <option value="weekly">Weekly</option>
-      </select>
       <button
         onClick={submit}
         className="rounded-lg px-3 py-1.5 text-[14px] font-semibold bg-accent-500 text-white hover:bg-accent-600 transition-colors"
@@ -74,7 +84,7 @@ export default function AddTaskForm({
       </button>
       <button
         onClick={reset}
-        className="rounded-lg px-2 py-1.5 text-[14px] text-muted hover:text-slate-600"
+        className="rounded-lg px-2 py-1.5 text-[14px] text-muted hover:text-stone-600"
       >
         Cancel
       </button>

@@ -55,11 +55,14 @@ export function todayYmd(): string {
 }
 
 // Friendly due-date label + a flag for overdue/today styling.
+// Within a week → weekday name; today/tomorrow/yesterday special-cased; further
+// out → "Jun 24" (no year); overdue → "4d overdue".
 export function dueLabel(due: string | null): { text: string; tone: "overdue" | "today" | "soon" | "none" } {
   if (!due) return { text: "", tone: "none" };
   const today = todayYmd();
+  const d = new Date(due + "T00:00:00");
   const diffDays = Math.round(
-    (new Date(due + "T00:00:00").getTime() - new Date(today + "T00:00:00").getTime()) / 86400000
+    (d.getTime() - new Date(today + "T00:00:00").getTime()) / 86400000
   );
 
   let text: string;
@@ -67,13 +70,10 @@ export function dueLabel(due: string | null): { text: string; tone: "overdue" | 
   else if (diffDays === 1) text = "Tomorrow";
   else if (diffDays === -1) text = "Yesterday";
   else if (diffDays < 0) text = `${Math.abs(diffDays)}d overdue`;
-  else if (diffDays < 7) text = `In ${diffDays}d`;
-  else {
-    const d = new Date(due + "T00:00:00");
-    text = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-  }
+  else if (diffDays <= 6) text = d.toLocaleDateString(undefined, { weekday: "long" });
+  else text = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
-  const tone = diffDays < 0 ? "overdue" : diffDays === 0 ? "today" : diffDays < 7 ? "soon" : "none";
+  const tone = diffDays < 0 ? "overdue" : diffDays === 0 ? "today" : diffDays <= 6 ? "soon" : "none";
   return { text, tone };
 }
 

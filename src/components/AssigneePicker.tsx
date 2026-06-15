@@ -41,14 +41,14 @@ export default function AssigneePicker({
             {assignee.name.charAt(0).toUpperCase()}
           </span>
         ) : (
-          <span className="w-6 h-6 rounded-full border border-dashed border-slate-300 text-slate-300 flex items-center justify-center text-[13px] hover:border-accent-400 hover:text-accent-400 transition-colors">
+          <span className="w-6 h-6 rounded-full border border-dashed border-stone-300 text-stone-300 flex items-center justify-center text-[13px] hover:border-accent-400 hover:text-accent-400 transition-colors">
             +
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-1 z-20 bg-white rounded-lg shadow-lg border border-slate-100 py-1 min-w-[150px]">
+        <div className="absolute right-0 mt-1 z-20 bg-paper rounded-lg shadow-lg border border-stone-100 py-1 min-w-[150px]">
           {currentPersonId != null && currentPersonId !== assigneeId && (
             <button
               onClick={() => { onAssign(currentPersonId); setOpen(false); }}
@@ -61,8 +61,8 @@ export default function AssigneePicker({
             <button
               key={p.id}
               onClick={() => { onAssign(p.id); setOpen(false); }}
-              className={`w-full text-left px-3 py-1.5 text-[14px] flex items-center gap-2 hover:bg-slate-50 ${
-                p.id === assigneeId ? "font-semibold" : "text-slate-600"
+              className={`w-full text-left px-3 py-1.5 text-[14px] flex items-center gap-2 hover:bg-stone-50 ${
+                p.id === assigneeId ? "font-semibold" : "text-stone-600"
               }`}
             >
               <span
@@ -75,7 +75,7 @@ export default function AssigneePicker({
           {assigneeId != null && (
             <button
               onClick={() => { onAssign(null); setOpen(false); }}
-              className="w-full text-left px-3 py-1.5 text-[14px] text-slate-400 hover:bg-slate-50 border-t border-slate-100 mt-1"
+              className="w-full text-left px-3 py-1.5 text-[14px] text-stone-400 hover:bg-stone-50 border-t border-stone-100 mt-1"
             >
               Unassign
             </button>

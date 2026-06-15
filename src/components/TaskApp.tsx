@@ -5,7 +5,6 @@ import type {
   Person,
   Task,
   Activity,
-  Recurrence,
   ProjectWithTasks,
 } from "@/lib/types";
 import { normalizeTask, normalizePerson, normalizeProject, normalizeActivity } from "@/lib/util";
@@ -21,6 +20,7 @@ const PERSON_KEY = "home-tasks:currentPersonId";
 type Confirm =
   | { kind: "task"; task: Task }
   | { kind: "project"; project: ProjectWithTasks }
+  | { kind: "person"; person: Person }
   | null;
 
 export default function TaskApp({
@@ -63,14 +63,28 @@ export default function TaskApp({
   }
 
   // --- people ---
-  async function addPerson(name: string) {
+  async function addPerson(name: string, color: string) {
     const res = await fetch("/api/people", {
       method: "POST",
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, color }),
     });
     const person: Person = normalizePerson(await res.json());
     setPeople((prev) => [...prev, person]);
     if (currentPersonId == null) pickPerson(person.id);
+  }
+
+  async function updatePerson(id: number, patch: { name?: string; color?: string }) {
+    setPeople((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+    await fetch(`/api/people/${id}`, { method: "PATCH", body: JSON.stringify(patch) });
+  }
+
+  async function removePerson(person: Person) {
+    setPeople((prev) => prev.filter((p) => p.id !== person.id));
+    if (currentPersonId === person.id) {
+      setCurrentPersonId(null);
+      localStorage.removeItem(PERSON_KEY);
+    }
+    await fetch(`/api/people/${person.id}`, { method: "DELETE" });
   }
 
   // --- projects ---
@@ -117,7 +131,7 @@ export default function TaskApp({
   // --- tasks ---
   async function addTask(
     projectId: number,
-    input: { title: string; due_date: string | null; recurrence: Recurrence }
+    input: { title: string; due_date: string | null }
   ) {
     const res = await fetch("/api/tasks", {
       method: "POST",
@@ -131,7 +145,7 @@ export default function TaskApp({
   }
 
   async function toggleTask(task: Task) {
-    const reopen = task.is_done; // only one-time tasks can be "done"
+    const reopen = task.is_done;
     const res = await fetch(`/api/tasks/${task.id}/complete`, {
       method: reopen ? "DELETE" : "POST",
       body: JSON.stringify({ actorId: currentPersonId }),
@@ -151,12 +165,8 @@ export default function TaskApp({
   const taskHandlers = {
     onToggle: toggleTask,
     onRename: (id: number, title: string) => patchTask(id, { title }),
-    onAssign: async (id: number, personId: number | null) => {
-      await patchTask(id, { assignee_id: personId });
-      refreshActivity();
-    },
+    onAssign: (id: number, personId: number | null) => patchTask(id, { assignee_id: personId }),
     onSetDue: (id: number, due: string | null) => patchTask(id, { due_date: due }),
-    onSetRecurrence: (id: number, r: Recurrence) => patchTask(id, { recurrence: r }),
     onDelete: (task: Task) => setConfirm({ kind: "task", task }),
   };
 
@@ -165,8 +175,10 @@ export default function TaskApp({
     if (confirm.kind === "task") {
       removeTaskFromState(confirm.task.id);
       await fetch(`/api/tasks/${confirm.task.id}`, { method: "DELETE" });
-    } else {
+    } else if (confirm.kind === "project") {
       await deleteProject(confirm.project);
+    } else {
+      await removePerson(confirm.person);
     }
     setConfirm(null);
   }
@@ -181,16 +193,17 @@ export default function TaskApp({
   if (!seeded) {
     return (
       <main className="min-h-screen flex items-center justify-center p-6">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 max-w-md text-center">
-          <h1 className="text-[22px] font-bold text-slate-800 mb-2">Home Tasks</h1>
-          <p className="text-[15px] text-muted mb-6">
+        <div className="bg-paper rounded-2xl shadow-[0_10px_40px_-18px_rgba(80,60,30,0.35)] border border-line p-10 max-w-md text-center">
+          <p className="text-[12px] font-semibold tracking-[0.2em] text-accent-600 uppercase mb-3">House &amp; Yard</p>
+          <h1 className="font-display text-[40px] leading-none font-semibold text-ink mb-3">Project&nbsp;List</h1>
+          <p className="text-[15px] text-muted mb-7">
             The database isn&apos;t set up yet. Click below to create the tables and
-            add a few starter projects.
+            get started.
           </p>
           <button
             onClick={seedDatabase}
             disabled={seeding}
-            className="rounded-lg px-5 py-2.5 text-[15px] font-semibold bg-accent-500 text-white hover:bg-accent-600 transition-colors disabled:opacity-60"
+            className="rounded-xl px-6 py-3 text-[15px] font-semibold bg-accent-500 text-white hover:bg-accent-600 transition-colors disabled:opacity-60 shadow-sm"
           >
             {seeding ? "Setting up…" : "Set up the database"}
           </button>
@@ -200,25 +213,36 @@ export default function TaskApp({
   }
 
   return (
-    <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
-      <header className="mb-6">
-        <h1 className="text-[26px] font-bold text-slate-800 tracking-tight">Home Tasks</h1>
-        <p className="text-[15px] text-muted mb-4">Shared household projects &amp; to-dos</p>
-        <PersonSwitcher
-          people={people}
-          currentPersonId={currentPersonId}
-          onPick={pickPerson}
-          onAdd={addPerson}
-        />
+    <main className="max-w-5xl mx-auto px-5 sm:px-8 py-10 sm:py-14">
+      <header className="mb-8">
+        <div className="flex items-end justify-between gap-4 flex-wrap">
+          <div>
+            <p className="text-[12px] font-semibold tracking-[0.22em] text-accent-600 uppercase mb-1.5">House &amp; Yard</p>
+            <h1 className="font-display font-semibold text-ink tracking-tight leading-[0.95] text-[clamp(35px,6.4vw,58px)]">
+              Project List
+            </h1>
+          </div>
+          <div>
+            <PersonSwitcher
+              people={people}
+              currentPersonId={currentPersonId}
+              onPick={pickPerson}
+              onAdd={addPerson}
+              onUpdate={updatePerson}
+              onRemove={(person) => setConfirm({ kind: "person", person })}
+            />
+          </div>
+        </div>
+        <div className="mt-5 border-t border-line" />
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-7 items-start">
         {/* Projects column */}
-        <div className="space-y-4">
+        <div className="space-y-5">
           {looseTasks.length > 0 && (
-            <section className="bg-white rounded-2xl shadow-sm border border-slate-100 px-5 py-3.5">
-              <h2 className="text-[17px] font-semibold text-slate-800 mb-1.5">Unfiled</h2>
-              <div className="divide-y divide-slate-50">
+            <section className="bg-paper rounded-2xl shadow-[0_6px_24px_-12px_rgba(80,60,30,0.25)] border border-line px-6 py-4">
+              <h2 className="font-display text-[18px] font-semibold text-ink mb-1.5">Unfiled</h2>
+              <div className="divide-y divide-line/60">
                 {looseTasks.map((task) => (
                   <TaskRow
                     key={task.id}
@@ -232,17 +256,24 @@ export default function TaskApp({
             </section>
           )}
 
-          {projects.map((project) => (
-            <ProjectSection
+          {projects.map((project, i) => (
+            // Descending z-index so an earlier card's popovers (date picker,
+            // assignee menu) paint above later cards instead of being covered.
+            <div
               key={project.id}
-              project={project}
-              people={people}
-              currentPersonId={currentPersonId}
-              onRenameProject={renameProject}
-              onDeleteProject={(p) => setConfirm({ kind: "project", project: p })}
-              onAddTask={addTask}
-              taskHandlers={taskHandlers}
-            />
+              className="rise-in relative"
+              style={{ animationDelay: `${i * 60}ms`, zIndex: projects.length - i }}
+            >
+              <ProjectSection
+                project={project}
+                people={people}
+                currentPersonId={currentPersonId}
+                onRenameProject={renameProject}
+                onDeleteProject={(p) => setConfirm({ kind: "project", project: p })}
+                onAddTask={addTask}
+                taskHandlers={taskHandlers}
+              />
+            </div>
           ))}
 
           {projects.length === 0 && (
@@ -257,9 +288,11 @@ export default function TaskApp({
         </div>
 
         {/* Activity column */}
-        <aside className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 lg:sticky lg:top-8">
-          <h2 className="text-[15px] font-semibold text-slate-700 mb-3">Recent activity</h2>
-          <ActivityFeed activity={activity} people={people} />
+        <aside className="bg-paper rounded-2xl shadow-[0_6px_24px_-12px_rgba(80,60,30,0.25)] border border-line p-5 lg:sticky lg:top-8">
+          <h2 className="font-display text-[18px] font-semibold text-ink mb-3">Recently done</h2>
+          <div className="max-h-[60vh] overflow-y-auto pr-1 -mr-1">
+            <ActivityFeed activity={activity} people={people} />
+          </div>
         </aside>
       </div>
 
@@ -268,7 +301,9 @@ export default function TaskApp({
           message={
             confirm.kind === "task"
               ? `Delete “${confirm.task.title}”?`
-              : `Delete the “${confirm.project.name}” project and all its tasks?`
+              : confirm.kind === "project"
+              ? `Delete the “${confirm.project.name}” project and all its tasks?`
+              : `Remove ${confirm.person.name}? Their tasks stay but become unassigned.`
           }
           onConfirm={doConfirmedDelete}
           onCancel={() => setConfirm(null)}

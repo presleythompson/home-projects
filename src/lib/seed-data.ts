@@ -13,6 +13,6 @@ export const seedData = {
   projects: [] as {
     name: string;
     description?: string;
-    tasks: { title: string; recurrence?: "daily" | "weekly" }[];
+    tasks: { title: string }[];
   }[],
 };

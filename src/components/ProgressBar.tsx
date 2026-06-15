@@ -11,7 +11,7 @@ export default function ProgressBar({
 
   return (
     <div className="flex items-center gap-2.5">
-      <div className="w-[100px] h-1.5 bg-slate-100 rounded-full overflow-hidden">
+      <div className="w-[90px] h-1 bg-line rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-500 ease-out ${
             pct === 100 ? "bg-accent-500" : "bg-accent-400"
@@ -19,7 +19,7 @@ export default function ProgressBar({
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="text-[15px] font-medium text-muted tabular-nums">
+      <span className="text-[13px] font-semibold text-muted tabular-nums">
         {completed}/{total}
       </span>
     </div>

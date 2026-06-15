@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-
-const PALETTE = ["#d07c28", "#2da368", "#3b7dd8", "#9b59b6", "#e0526a", "#16a3a3"];
+import { PERSON_COLORS } from "@/lib/colors";
 
 export async function GET() {
   const sql = getDb();
@@ -15,7 +14,7 @@ export async function POST(req: NextRequest) {
 
   const maxOrder = await sql`SELECT COALESCE(MAX(sort_order), -1) as max_order FROM people`;
   const sort_order = (maxOrder[0]?.max_order ?? -1) + 1;
-  const chosenColor = color ?? PALETTE[sort_order % PALETTE.length];
+  const chosenColor = color ?? PERSON_COLORS[sort_order % PERSON_COLORS.length];
 
   const rows = await sql`
     INSERT INTO people (name, color, sort_order)

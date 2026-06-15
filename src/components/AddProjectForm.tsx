@@ -39,7 +39,7 @@ export default function AddProjectForm({
           if (e.key === "Escape") { setName(""); setOpen(false); }
         }}
         placeholder="Project name…"
-        className="rounded-lg px-3 py-2 text-[15px] border border-slate-200 outline-none focus:border-accent-400 bg-white w-56"
+        className="rounded-lg px-3 py-2 text-[15px] border border-stone-200 outline-none focus:border-accent-400 bg-paper w-56"
       />
       <button
         onClick={submit}
@@ -49,7 +49,7 @@ export default function AddProjectForm({
       </button>
       <button
         onClick={() => { setName(""); setOpen(false); }}
-        className="rounded-lg px-2 py-2 text-[15px] text-muted hover:text-slate-600"
+        className="rounded-lg px-2 py-2 text-[15px] text-muted hover:text-stone-600"
       >
         Cancel
       </button>

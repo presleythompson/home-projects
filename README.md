@@ -61,5 +61,18 @@ cleaning tracker.
 | `/api/projects/[id]` | PATCH, DELETE | Rename·archive / delete a project |
 | `/api/tasks` | GET, POST | List / add tasks |
 | `/api/tasks/[id]` | PATCH, DELETE | Edit (title/due/recurrence/assignee) / delete |
-| `/api/tasks/[id]/complete` | POST, DELETE | Check off (handles recurrence) / reopen |
-| `/api/activity` | GET | Recent who-did-what feed (`?limit=`) |
+| `/api/tasks/[id]/complete` | POST, DELETE | Check off (rolls recurrence forward) / reopen |
+| `/api/activity` | GET | Recent completions feed — `completed` events, last 14 days (`?limit=`) |
+
+### Recurrence
+
+`tasks.recurrence` is JSONB (null = one-time). Shapes (see `src/lib/recurrence.ts`):
+`{type:"interval",interval,unit:"day"|"week"}`, `{type:"weekdays",days:[0-6]}`,
+`{type:"monthly",interval,monthday}`. On completion, recurring tasks roll their due
+date to the next occurrence instead of being marked done.
+
+### Visibility rules
+
+Completed one-time tasks sink to the bottom of their project and drop out of view 1 week
+after completion (enforced by the load query). The activity feed shows only completions
+from the last 14 days. Both are display filters — underlying rows are retained.

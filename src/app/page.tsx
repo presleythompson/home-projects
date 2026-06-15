@@ -14,8 +14,14 @@ async function getData() {
     const [people, projects, tasks, activity] = await Promise.all([
       sql`SELECT * FROM people ORDER BY sort_order, id`,
       sql`SELECT * FROM projects ORDER BY sort_order, id`,
-      sql`SELECT * FROM tasks ORDER BY sort_order, id`,
-      sql`SELECT * FROM activity ORDER BY created_at DESC, id DESC LIMIT 30`,
+      // Hide one-time tasks that were completed more than a week ago.
+      sql`SELECT * FROM tasks
+          WHERE NOT (is_done AND completed_at < now() - interval '7 days')
+          ORDER BY sort_order, id`,
+      // Completions only, last 14 days.
+      sql`SELECT * FROM activity
+          WHERE action = 'completed' AND created_at >= now() - interval '14 days'
+          ORDER BY created_at DESC, id DESC LIMIT 50`,
     ]);
 
     const tasksByProject = new Map<number | null, Task[]>();

@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   title TEXT NOT NULL,
   notes TEXT,
   due_date DATE,
-  recurrence TEXT CHECK (recurrence IN ('daily', 'weekly')),
+  recurrence JSONB, -- null = one-time; see src/lib/recurrence.ts for the shape
   assignee_id BIGINT REFERENCES people(id) ON DELETE SET NULL,
   is_done BOOLEAN NOT NULL DEFAULT false,
   completed_at TIMESTAMPTZ,
