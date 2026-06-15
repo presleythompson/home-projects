@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@theme {
+  /* Warm amber/terracotta palette — distinct from the cleaning tracker's green */
+  --color-accent-50: #fdf6ed;
+  --color-accent-100: #f9e8d0;
+  --color-accent-200: #f2cf9f;
+  --color-accent-400: #e09a4a;
+  --color-accent-500: #d07c28;
+  --color-accent-600: #b5651d;
+  --color-accent-700: #934f17;
+  --color-accent-800: #743f15;
+
+  /* Warm neutrals */
+  --color-surface: #fbfaf8;
+  --color-muted: #82786b;
+
+  /* Status */
+  --color-warn: #c48a1a;
+  --color-danger-50: #fef2f2;
+  --color-danger-500: #c4443a;
+  --color-danger-600: #a8372e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--color-surface);
+  min-height: 100vh;
+  color: #3a342d;
+}
+
+/* Custom checkbox */
+input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin: 0;
+  border: 1.5px solid #d2c8ba;
+  border-radius: 0.25rem;
+  background: white;
+  cursor: pointer;
+  display: grid;
+  place-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+input[type="checkbox"]:checked {
+  background: var(--color-accent-500);
+  border-color: var(--color-accent-500);
+}
+
+input[type="checkbox"]:checked::after {
+  content: "✓";
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+input[type="checkbox"]:hover {
+  border-color: var(--color-accent-400);
+  box-shadow: 0 0 0 2px rgba(208, 124, 40, 0.08);
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Subtle selection color */
+::selection {
+  background: var(--color-accent-100);
+}
