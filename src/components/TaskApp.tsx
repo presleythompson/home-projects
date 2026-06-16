@@ -14,6 +14,7 @@ import AddProjectForm from "./AddProjectForm";
 import ActivityFeed from "./ActivityFeed";
 import TaskRow from "./TaskRow";
 import ConfirmDialog from "./ConfirmDialog";
+import NamePrompt from "./NamePrompt";
 
 const PERSON_KEY = "home-tasks:currentPersonId";
 
@@ -41,15 +42,17 @@ export default function TaskApp({
   const [looseTasks, setLooseTasks] = useState<Task[]>(initialLooseTasks);
   const [activity, setActivity] = useState<Activity[]>(initialActivity);
   const [currentPersonId, setCurrentPersonId] = useState<number | null>(null);
+  const [identityReady, setIdentityReady] = useState(false);
   const [confirm, setConfirm] = useState<Confirm>(null);
   const [seeding, setSeeding] = useState(false);
 
-  // Restore "who's using this" from the browser.
+  // Restore "who's using this" from the browser (then we know whether to prompt).
   useEffect(() => {
     const stored = localStorage.getItem(PERSON_KEY);
     if (stored && initialPeople.some((p) => p.id === Number(stored))) {
       setCurrentPersonId(Number(stored));
     }
+    setIdentityReady(true);
   }, [initialPeople]);
 
   function pickPerson(id: number) {
@@ -155,10 +158,16 @@ export default function TaskApp({
   }
 
   async function patchTask(id: number, patch: Record<string, unknown>) {
+    // Optimistic: apply locally right away so selections feel instant.
+    const apply = (t: Task) => (t.id === id ? normalizeTask({ ...t, ...patch } as Task) : t);
+    setProjects((prev) => prev.map((p) => ({ ...p, tasks: p.tasks.map(apply) })));
+    setLooseTasks((prev) => prev.map(apply));
+
     const res = await fetch(`/api/tasks/${id}`, {
       method: "PATCH",
       body: JSON.stringify({ ...patch, actorId: currentPersonId }),
     });
+    // Reconcile with the server's canonical row.
     if (res.ok) replaceTask(normalizeTask(await res.json()));
   }
 
@@ -308,6 +317,10 @@ export default function TaskApp({
           onConfirm={doConfirmedDelete}
           onCancel={() => setConfirm(null)}
         />
+      )}
+
+      {identityReady && currentPersonId === null && (
+        <NamePrompt people={people} onPick={pickPerson} onAdd={addPerson} />
       )}
     </main>
   );

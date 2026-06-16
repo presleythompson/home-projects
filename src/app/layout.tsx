@@ -18,7 +18,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Forest Fam — Project List",
+  title: "House & Yard Project List",
   description: "Shared household tasks & projects",
 };
 

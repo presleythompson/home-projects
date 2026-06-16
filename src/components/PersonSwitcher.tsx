@@ -78,27 +78,20 @@ export default function PersonSwitcher({
     setColor(PERSON_COLORS[people.length % PERSON_COLORS.length]);
   }
 
+  // A name is always chosen via the first-visit prompt, so there's no
+  // "select your name" state here — just the current person's pill.
+  if (!current) return null;
+
   return (
     <div className="relative" ref={ref}>
-      {/* Trigger: shows who you are, or invites first-time selection */}
-      {current ? (
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-2 rounded-full bg-paper border border-line pl-1.5 pr-3 py-1.5 shadow-sm hover:border-stone-300 transition-colors"
-          title="Switch person"
-        >
-          <Avatar person={current} />
-          <span className="text-[14px] font-semibold text-ink">{current.name}</span>
-          <span className="text-stone-400 text-[10px] leading-none">▾</span>
-        </button>
-      ) : (
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="rounded-full bg-accent-500 text-white px-4 py-2 text-[14px] font-semibold shadow-sm hover:bg-accent-600 transition-colors"
-        >
-          Select your name
-        </button>
-      )}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 rounded-full bg-paper border border-line pl-1.5 pr-2.5 py-1.5 shadow-sm hover:border-stone-300 transition-colors cursor-pointer"
+        title="Switch person"
+      >
+        <Avatar person={current} />
+        <span className="text-[14px] font-semibold text-ink">{current.name}</span>
+      </button>
 
       {open && (
         <div className="absolute right-0 mt-2 z-30 bg-paper rounded-xl shadow-lg border border-line w-64 text-[14px] overflow-hidden">

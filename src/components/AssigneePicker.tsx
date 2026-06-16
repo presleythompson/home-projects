@@ -8,11 +8,13 @@ export default function AssigneePicker({
   assigneeId,
   currentPersonId,
   onAssign,
+  trigger,
 }: {
   people: Person[];
   assigneeId: number | null;
   currentPersonId: number | null;
   onAssign: (personId: number | null) => void;
+  trigger?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -27,13 +29,15 @@ export default function AssigneePicker({
   }, [open]);
 
   return (
-    <div className="relative" ref={ref}>
+    <span className="relative inline-block align-baseline" ref={ref}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center"
+        className="inline-flex items-center cursor-pointer align-baseline"
         title={assignee ? `Assigned to ${assignee.name}` : "Unassigned — click to assign"}
       >
-        {assignee ? (
+        {trigger ? (
+          trigger
+        ) : assignee ? (
           <span
             className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[11px] font-bold ring-1 ring-black/5"
             style={{ background: assignee.color }}
@@ -48,11 +52,11 @@ export default function AssigneePicker({
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-1 z-20 bg-paper rounded-lg shadow-lg border border-stone-100 py-1 min-w-[150px]">
+        <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-40 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:translate-x-0 sm:translate-y-0 sm:mt-1 bg-paper rounded-lg shadow-lg border border-stone-100 py-1 min-w-[150px]">
           {currentPersonId != null && currentPersonId !== assigneeId && (
             <button
               onClick={() => { onAssign(currentPersonId); setOpen(false); }}
-              className="w-full text-left px-3 py-1.5 text-[14px] font-medium text-accent-600 hover:bg-accent-50"
+              className="w-full text-left px-3 py-1.5 text-[14px] font-medium text-accent-600 hover:bg-accent-50 cursor-pointer"
             >
               Assign to me
             </button>
@@ -61,7 +65,7 @@ export default function AssigneePicker({
             <button
               key={p.id}
               onClick={() => { onAssign(p.id); setOpen(false); }}
-              className={`w-full text-left px-3 py-1.5 text-[14px] flex items-center gap-2 hover:bg-stone-50 ${
+              className={`w-full text-left px-3 py-1.5 text-[14px] flex items-center gap-2 hover:bg-stone-50 cursor-pointer ${
                 p.id === assigneeId ? "font-semibold" : "text-stone-600"
               }`}
             >
@@ -75,13 +79,13 @@ export default function AssigneePicker({
           {assigneeId != null && (
             <button
               onClick={() => { onAssign(null); setOpen(false); }}
-              className="w-full text-left px-3 py-1.5 text-[14px] text-stone-400 hover:bg-stone-50 border-t border-stone-100 mt-1"
+              className="w-full text-left px-3 py-1.5 text-[14px] text-stone-400 hover:bg-stone-50 border-t border-stone-100 mt-1 cursor-pointer"
             >
               Unassign
             </button>
           )}
         </div>
       )}
-    </div>
+    </span>
   );
 }

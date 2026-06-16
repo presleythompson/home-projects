@@ -42,8 +42,8 @@ export default function ProjectSection({
   });
 
   return (
-    <section className="bg-paper rounded-2xl shadow-[0_6px_24px_-12px_rgba(80,60,30,0.25)] border border-line">
-      <header className="flex items-center gap-3 px-6 py-4 border-b border-line/70">
+    <section className="border-b border-line pb-4 sm:pb-0 sm:bg-paper sm:rounded-2xl sm:shadow-[0_6px_24px_-12px_rgba(80,60,30,0.25)] sm:border sm:border-line">
+      <header className="flex items-center gap-3 px-0 py-3 border-b border-line/70 sm:px-6 sm:py-4">
         <h2 className="flex items-center gap-2.5 min-w-0">
           <span className="w-1.5 h-5 rounded-sm bg-accent-500 flex-shrink-0" />
           <span className="uppercase tracking-[0.12em] text-[15px] font-bold text-ink">
@@ -62,7 +62,7 @@ export default function ProjectSection({
         </div>
       </header>
 
-      <div className="px-6 py-3">
+      <div className="px-0 py-2 sm:px-6 sm:py-3">
         {project.tasks.length === 0 ? (
           <p className="text-[14px] text-muted italic py-1">No tasks yet.</p>
         ) : (

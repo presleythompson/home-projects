@@ -96,6 +96,17 @@ input[type="checkbox"]:hover {
   background: var(--color-accent-200);
 }
 
+/* Prevent iOS Safari from zooming the viewport when focusing a control:
+   it only zooms when the control's font-size is < 16px. Bump to 16px on
+   touch devices (keeps the smaller sizing on desktop with a fine pointer). */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 /* Staggered entrance for project cards */
 /* Opacity-only fade — deliberately NO transform. Any lingering transform (even
    an identity matrix) creates a stacking context that traps popovers (date
