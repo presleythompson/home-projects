@@ -134,7 +134,7 @@ export default function TaskApp({
   // --- tasks ---
   async function addTask(
     projectId: number,
-    input: { title: string; due_date: string | null }
+    input: { title: string; due_date: string | null; assignee_id: number | null }
   ) {
     const res = await fetch("/api/tasks", {
       method: "POST",

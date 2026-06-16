@@ -5,6 +5,7 @@ import { dueLabel } from "@/lib/util";
 import EditableText from "./EditableText";
 import AssigneePicker from "./AssigneePicker";
 import DatePicker from "./DatePicker";
+import { CalendarIcon, PersonIcon } from "./icons";
 
 const TONE_BADGE: Record<string, string> = {
   overdue: "bg-danger-50 text-danger-600",
@@ -12,24 +13,6 @@ const TONE_BADGE: Record<string, string> = {
   soon: "bg-line/70 text-stone-600",
   none: "bg-line/70 text-stone-500",
 };
-
-function CalendarIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
-      <rect x="3" y="4.5" width="18" height="17" rx="2.5" />
-      <path d="M16 2.5v4M8 2.5v4M3 9.5h18" />
-    </svg>
-  );
-}
-
-function PersonIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-[14px] h-[14px]">
-      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-  );
-}
 
 export default function TaskRow({
   task,
@@ -96,7 +79,7 @@ export default function TaskRow({
             </span>
           ) : (
             <span
-              className="w-6 h-6 rounded-full border border-dashed border-stone-400 text-stone-400 flex items-center justify-center hover:border-accent-400 hover:text-accent-400 transition-colors"
+              className="w-6 h-6 text-stone-400 flex items-center justify-center hover:text-accent-400 transition-colors"
               title="Assign someone"
             >
               <PersonIcon />

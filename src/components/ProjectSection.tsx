@@ -20,7 +20,7 @@ export default function ProjectSection({
   currentPersonId: number | null;
   onRenameProject: (id: number, name: string) => void;
   onDeleteProject: (project: ProjectWithTasks) => void;
-  onAddTask: (projectId: number, input: { title: string; due_date: string | null }) => void;
+  onAddTask: (projectId: number, input: { title: string; due_date: string | null; assignee_id: number | null }) => void;
   taskHandlers: {
     onToggle: (task: Task) => void;
     onRename: (id: number, title: string) => void;
@@ -79,7 +79,11 @@ export default function ProjectSection({
           </div>
         )}
         <div className="pt-1.5">
-          <AddTaskForm onAdd={(input) => onAddTask(project.id, input)} />
+          <AddTaskForm
+            people={people}
+            currentPersonId={currentPersonId}
+            onAdd={(input) => onAddTask(project.id, input)}
+          />
         </div>
       </div>
     </section>
