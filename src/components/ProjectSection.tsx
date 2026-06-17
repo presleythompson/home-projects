@@ -61,8 +61,7 @@ export default function ProjectSection({
             <GripIcon className="w-[18px] h-[18px]" />
           </button>
         )}
-        <h2 className="flex items-center gap-2.5 min-w-0">
-          <span className="w-1.5 h-5 rounded-sm bg-accent-500 flex-shrink-0" />
+        <h2 className="flex items-center min-w-0">
           <span className="uppercase tracking-[0.12em] text-[15px] font-bold text-ink">
             <EditableText value={project.name} onSave={(v) => onRenameProject(project.id, v)} />
           </span>
