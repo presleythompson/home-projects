@@ -9,11 +9,13 @@ import DatePicker from "./DatePicker";
 import Avatar from "./Avatar";
 import { CalendarIcon, PersonIcon, TrashIcon } from "./icons";
 
+// Warm→cool urgency gradient: terracotta (overdue) → deep amber (today) →
+// light amber (this week) → denim (later). Green is reserved for "done".
 const TONE_BADGE: Record<string, string> = {
-  overdue: "bg-danger-50 text-danger-600",
+  overdue: "bg-danger-50 text-danger-700",
   today: "bg-accent-100 text-accent-700",
-  soon: "bg-line/70 text-stone-600",
-  none: "bg-line/70 text-stone-500",
+  soon: "bg-accent-50 text-accent-700",
+  none: "bg-info-50 text-info-700",
 };
 
 export default function TaskRow({

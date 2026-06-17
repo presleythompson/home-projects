@@ -43,7 +43,9 @@ export default function ProjectSection({
   const sortedTasks = [...project.tasks].sort((a, b) => {
     if (a.is_done !== b.is_done) return a.is_done ? 1 : -1;
     if (a.is_done && b.is_done) {
-      return (b.completed_at ?? "").localeCompare(a.completed_at ?? "");
+      // completed_at may arrive as a Date (server) or string (optimistic update);
+      // coerce both so the comparison is safe either way.
+      return String(b.completed_at ?? "").localeCompare(String(a.completed_at ?? ""));
     }
     return a.sort_order - b.sort_order;
   });

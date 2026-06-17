@@ -15,9 +15,7 @@ export default function ProgressBar({
     <div className="flex items-center gap-2.5 w-full">
       <div className="flex-1 h-1 bg-line rounded-full overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all duration-500 ease-out ${
-            pct === 100 ? "bg-accent-500" : "bg-accent-400"
-          }`}
+          className="h-full rounded-full bg-accent-500 transition-all duration-500 ease-out"
           style={{ width: `${pct}%` }}
         />
       </div>

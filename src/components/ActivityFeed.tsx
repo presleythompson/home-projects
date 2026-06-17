@@ -11,6 +11,14 @@ const VERB: Record<string, string> = {
   created: "added",
 };
 
+// Color the verb by meaning: green = done, amber = added/assigned, muted = reopened.
+const VERB_TONE: Record<string, string> = {
+  completed: "text-success-700 font-medium",
+  reopened: "text-muted",
+  assigned: "text-accent-600",
+  created: "text-accent-600",
+};
+
 export default function ActivityFeed({
   activity,
   people,
@@ -40,7 +48,7 @@ export default function ActivityFeed({
             <div className="min-w-0">
               <span className="text-stone-700">
                 <span className="font-semibold">{person?.name ?? "Someone"}</span>{" "}
-                {VERB[a.action] ?? a.action}
+                <span className={VERB_TONE[a.action] ?? ""}>{VERB[a.action] ?? a.action}</span>
                 {a.detail ? <span className="text-stone-500"> “{a.detail}”</span> : null}
               </span>
               <span className="text-muted"> · {timeAgo(a.created_at)}</span>

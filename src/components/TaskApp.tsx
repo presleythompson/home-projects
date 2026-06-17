@@ -405,7 +405,7 @@ export default function TaskApp({
         {/* Activity column */}
         <aside className="bg-paper rounded-2xl shadow-[0_6px_24px_-12px_rgba(80,60,30,0.25)] border border-line p-5 lg:sticky lg:top-8">
           <h2 className="font-display text-[18px] font-semibold text-ink mb-3">Recently done</h2>
-          <div className="max-h-[60vh] overflow-y-auto pr-1 -mr-1">
+          <div className="custom-scroll max-h-[60vh] overflow-y-auto pr-1 -mr-1">
             <ActivityFeed activity={activity} people={people} />
           </div>
         </aside>

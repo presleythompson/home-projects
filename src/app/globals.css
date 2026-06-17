@@ -27,6 +27,20 @@
   --color-danger-50: #fbeeea;
   --color-danger-500: #c4443a;
   --color-danger-600: #a8372e;
+  --color-danger-700: #8a2f23; /* deep terracotta — overdue badge text */
+
+  /* Success — sage/olive green; reserved for completion (done = green) */
+  --color-success-50: #eef3e7;
+  --color-success-100: #dceacb;
+  --color-success-500: #6b8f3e;
+  --color-success-600: #587733;
+  --color-success-700: #455d27;
+
+  /* Info — dusty denim; "scheduled / later" date tone (warm-leaning slate) */
+  --color-info-50: #eaeff2;
+  --color-info-500: #5f7d95;
+  --color-info-600: #4d6878;
+  --color-info-700: #3c5260;
 }
 
 * {
@@ -73,9 +87,13 @@ input[type="checkbox"] {
   flex-shrink: 0;
 }
 
+/* Checked state is deliberately quiet: a completed task should recede, like its
+   faded strikethrough text — so the box dims to a muted terracotta rather than
+   popping. Terracotta is the only color used on the checkbox. */
 input[type="checkbox"]:checked {
   background: var(--color-accent-500);
   border-color: var(--color-accent-500);
+  opacity: 0.5;
   animation: checkPop 0.22s ease-out;
 }
 
@@ -126,6 +144,25 @@ input[type="checkbox"]:hover {
 .rise-in {
   opacity: 0;
   animation: riseIn 0.45s ease-out forwards;
+}
+
+/* Thin warm scrollbar — only shows when the content actually overflows */
+.custom-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) transparent;
+}
+.custom-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-line);
+  border-radius: 9999px;
+}
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: #d7c9ad;
 }
 
 @media (prefers-reduced-motion: reduce) {
