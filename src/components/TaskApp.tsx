@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -21,6 +21,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import type {
   Person,
+  Project,
   Task,
   Activity,
   ProjectWithTasks,
@@ -129,6 +130,64 @@ export default function TaskApp({
     const res = await fetch("/api/activity");
     if (res.ok) setActivity((await res.json()).map(normalizeActivity));
   }
+
+  // Pull the whole board so two people on different devices stay in sync without
+  // a manual refresh. Skipped while someone is mid-edit (an input/textarea is
+  // focused) or a confirm dialog is open, so it never clobbers in-progress work.
+  async function refreshAll() {
+    const ae = document.activeElement;
+    if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA")) return;
+    if (confirm) return;
+    try {
+      const [pplRes, projRes, taskRes, actRes] = await Promise.all([
+        fetch("/api/people"),
+        fetch("/api/projects"),
+        fetch("/api/tasks"),
+        fetch("/api/activity"),
+      ]);
+      if (!pplRes.ok || !projRes.ok || !taskRes.ok || !actRes.ok) return;
+      const [ppl, proj, tsk, act] = await Promise.all([
+        pplRes.json(), projRes.json(), taskRes.json(), actRes.json(),
+      ]);
+
+      const tasks = (tsk as Task[]).map(normalizeTask);
+      const byProject = new Map<number | null, Task[]>();
+      for (const t of tasks) {
+        const key = t.project_id ?? null;
+        if (!byProject.has(key)) byProject.set(key, []);
+        byProject.get(key)!.push(t);
+      }
+
+      setPeople((ppl as Person[]).map(normalizePerson));
+      setProjects((proj as Project[]).map((p) => {
+        const np = normalizeProject(p);
+        return { ...np, tasks: byProject.get(np.id) ?? [] };
+      }));
+      setLooseTasks(byProject.get(null) ?? []);
+      setActivity((act as Activity[]).map(normalizeActivity));
+    } catch {
+      // Network blip — just wait for the next tick.
+    }
+  }
+
+  // Keep a live ref so the polling interval always calls the latest closure
+  // (which sees current state like `confirm`).
+  const refreshAllRef = useRef(refreshAll);
+  refreshAllRef.current = refreshAll;
+
+  useEffect(() => {
+    const tick = () => {
+      if (document.visibilityState === "visible") refreshAllRef.current();
+    };
+    const id = window.setInterval(tick, 8000);
+    document.addEventListener("visibilitychange", tick);
+    window.addEventListener("focus", tick);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", tick);
+      window.removeEventListener("focus", tick);
+    };
+  }, []);
 
   // --- people ---
   async function addPerson(name: string, color: string, avatar: string | null) {

@@ -61,14 +61,29 @@ export default function AddProjectForm({
           Cancel
         </button>
       </div>
-      <label className="flex items-center gap-2 text-[13px] text-muted cursor-pointer select-none pl-0.5">
-        <input
-          type="checkbox"
-          checked={isOngoing}
-          onChange={(e) => setIsOngoing(e.target.checked)}
-        />
-        Ongoing — no progress bar
-      </label>
+      <div className="flex items-center gap-2.5 pl-0.5">
+        <span className="text-[13px] text-muted">Type</span>
+        <div className="inline-flex rounded-lg border border-stone-200 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setIsOngoing(false)}
+            className={`px-3 py-1.5 text-[13px] font-medium transition-colors ${
+              !isOngoing ? "bg-accent-500 text-white" : "text-stone-500 hover:bg-stone-50"
+            }`}
+          >
+            Finite
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsOngoing(true)}
+            className={`px-3 py-1.5 text-[13px] font-medium border-l border-stone-200 transition-colors ${
+              isOngoing ? "bg-accent-500 text-white" : "text-stone-500 hover:bg-stone-50"
+            }`}
+          >
+            Ongoing
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

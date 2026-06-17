@@ -27,7 +27,7 @@ export default function NamePrompt({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/25 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-black/25 backdrop-blur-sm flex items-start justify-center overflow-y-auto p-4 pt-6 sm:pt-10">
       <div className="bg-paper rounded-2xl shadow-xl border border-line p-6 w-full max-w-sm">
         <h2 className="font-display text-[24px] font-semibold text-ink mb-5">Select or add your name!</h2>
 
