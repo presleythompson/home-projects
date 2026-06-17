@@ -156,10 +156,10 @@ export default function TaskApp({
   }
 
   // --- projects ---
-  async function addProject(name: string) {
+  async function addProject(name: string, isOngoing: boolean) {
     const res = await fetch("/api/projects", {
       method: "POST",
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, is_ongoing: isOngoing }),
     });
     const project = normalizeProject(await res.json());
     setProjects((prev) => [...prev, { ...project, tasks: [] }]);
@@ -170,6 +170,14 @@ export default function TaskApp({
     await fetch(`/api/projects/${id}`, {
       method: "PATCH",
       body: JSON.stringify({ name }),
+    });
+  }
+
+  async function setProjectOngoing(id: number, isOngoing: boolean) {
+    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, is_ongoing: isOngoing } : p)));
+    await fetch(`/api/projects/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ is_ongoing: isOngoing }),
     });
   }
 
@@ -233,12 +241,36 @@ export default function TaskApp({
 
   async function toggleTask(task: Task) {
     const reopen = task.is_done;
+    // Optimistic: flip the checkbox immediately so it feels instant, then
+    // reconcile with the server's canonical row (revert on failure).
+    replaceTask(
+      normalizeTask({
+        ...task,
+        is_done: !reopen,
+        completed_at: reopen ? null : new Date().toISOString(),
+        completed_by: reopen ? null : currentPersonId,
+      } as Task)
+    );
+
     const res = await fetch(`/api/tasks/${task.id}/complete`, {
       method: reopen ? "DELETE" : "POST",
       body: JSON.stringify({ actorId: currentPersonId }),
     });
+    // Reopening reverses the completion — drop its entries from the feed now.
+    if (reopen) {
+      setActivity((prev) =>
+        prev.filter((a) => !(a.task_id === task.id && a.action === "completed"))
+      );
+    }
+
     if (res.ok) replaceTask(normalizeTask(await res.json()));
+    else replaceTask(task); // revert
     refreshActivity();
+  }
+
+  async function clearActivity() {
+    setActivity([]);
+    await fetch("/api/activity", { method: "DELETE" });
   }
 
   async function patchTask(id: number, patch: Record<string, unknown>) {
@@ -362,7 +394,9 @@ export default function TaskApp({
                       people={people}
                       currentPersonId={currentPersonId}
                       onRenameProject={renameProject}
-                      onDeleteProject={(p) => setConfirm({ kind: "project", project: p })}                      onAddTask={addTask}
+                      onDeleteProject={(p) => setConfirm({ kind: "project", project: p })}
+                      onSetOngoing={setProjectOngoing}
+                      onAddTask={addTask}
                       taskHandlers={taskHandlers}
                     />
                   ))}
@@ -383,6 +417,7 @@ export default function TaskApp({
                     currentPersonId={currentPersonId}
                     onRenameProject={renameProject}
                     onDeleteProject={(p) => setConfirm({ kind: "project", project: p })}
+                    onSetOngoing={setProjectOngoing}
                     onAddTask={addTask}
                     taskHandlers={taskHandlers}
                   />
@@ -408,6 +443,16 @@ export default function TaskApp({
           <div className="custom-scroll max-h-[60vh] overflow-y-auto pr-1 -mr-1">
             <ActivityFeed activity={activity} people={people} />
           </div>
+          {activity.length > 0 && (
+            <div className="mt-3 text-right">
+              <button
+                onClick={clearActivity}
+                className="text-[12px] text-stone-400 hover:text-accent-600 transition-colors cursor-pointer"
+              >
+                Clear
+              </button>
+            </div>
+          )}
         </aside>
       </div>
 

@@ -7,7 +7,7 @@ export async function PATCH(
 ) {
   const sql = getDb();
   const { id } = await params;
-  const { name, description, is_archived } = await req.json();
+  const { name, description, is_archived, is_ongoing } = await req.json();
 
   // Apply only the fields that were provided.
   if (name !== undefined) {
@@ -18,6 +18,9 @@ export async function PATCH(
   }
   if (is_archived !== undefined) {
     await sql`UPDATE projects SET is_archived = ${is_archived} WHERE id = ${id}`;
+  }
+  if (is_ongoing !== undefined) {
+    await sql`UPDATE projects SET is_ongoing = ${is_ongoing} WHERE id = ${id}`;
   }
 
   const rows = await sql`SELECT * FROM projects WHERE id = ${id}`;

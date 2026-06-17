@@ -14,10 +14,9 @@ async function getData() {
     const [people, projects, tasks, activity] = await Promise.all([
       sql`SELECT * FROM people ORDER BY sort_order, id`,
       sql`SELECT * FROM projects ORDER BY sort_order, id`,
-      // Hide one-time tasks that were completed more than a week ago.
-      sql`SELECT * FROM tasks
-          WHERE NOT (is_done AND completed_at < now() - interval '7 days')
-          ORDER BY sort_order, id`,
+      // Load all tasks; the "hide completed after 2 days" rule is applied
+      // client-side (per project, toggleable) so progress counts stay whole.
+      sql`SELECT * FROM tasks ORDER BY sort_order, id`,
       // Completions only, last 14 days.
       sql`SELECT * FROM activity
           WHERE action = 'completed' AND created_at >= now() - interval '14 days'

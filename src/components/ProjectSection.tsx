@@ -8,12 +8,19 @@ import TaskRow from "./TaskRow";
 import AddTaskForm from "./AddTaskForm";
 import { GripIcon, TrashIcon } from "./icons";
 
+// Completed tasks stay visible for 2 days, then hide (toggleable per project).
+const STALE_MS = 2 * 24 * 60 * 60 * 1000;
+function isStaleCompleted(t: Task): boolean {
+  return t.is_done && !!t.completed_at && Date.now() - new Date(t.completed_at).getTime() > STALE_MS;
+}
+
 export default function ProjectSection({
   project,
   people,
   currentPersonId,
   onRenameProject,
   onDeleteProject,
+  onSetOngoing,
   onAddTask,
   taskHandlers,
   dragHandleProps,
@@ -24,6 +31,7 @@ export default function ProjectSection({
   currentPersonId: number | null;
   onRenameProject: (id: number, name: string) => void;
   onDeleteProject: (project: ProjectWithTasks) => void;
+  onSetOngoing: (id: number, isOngoing: boolean) => void;
   onAddTask: (projectId: number, input: { title: string; due_date: string | null; assignee_id: number | null }) => void;
   taskHandlers: {
     onToggle: (task: Task) => void;
@@ -36,8 +44,10 @@ export default function ProjectSection({
   setActivatorNodeRef?: (el: HTMLElement | null) => void;
 }) {
   const [editingName, setEditingName] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
   const total = project.tasks.length;
   const doneCount = project.tasks.filter((t) => t.is_done).length;
+  const showBar = !project.is_ongoing && total > 0;
 
   // Completed one-time tasks sink to the bottom (most recently done first there).
   const sortedTasks = [...project.tasks].sort((a, b) => {
@@ -49,6 +59,10 @@ export default function ProjectSection({
     }
     return a.sort_order - b.sort_order;
   });
+
+  // Hide completions older than 2 days unless the user expands them.
+  const hiddenCount = sortedTasks.filter(isStaleCompleted).length;
+  const visibleTasks = showCompleted ? sortedTasks : sortedTasks.filter((t) => !isStaleCompleted(t));
 
   return (
     <section className="border-b border-line pb-4 sm:pb-0 sm:bg-paper sm:rounded-2xl sm:shadow-[0_6px_24px_-12px_rgba(80,60,30,0.25)] sm:border sm:border-line">
@@ -74,27 +88,39 @@ export default function ProjectSection({
               />
             </span>
           </h2>
-          {/* Desktop: progress in a compact inline slot. Mobile: moves below. */}
-          {total > 0 && (
+          {/* Desktop: progress in a compact inline slot (finite projects only). */}
+          {showBar && !editingName && (
             <div className="hidden sm:block w-32 flex-shrink-0">
               <ProgressBar completed={doneCount} total={total} />
             </div>
           )}
           {editingName && (
-            <button
-              onMouseDown={(e) => { e.preventDefault(); onDeleteProject(project); }}
-              className="inline-flex items-center text-stone-400 hover:text-danger-500 transition-colors cursor-pointer flex-shrink-0"
-              title="Delete project"
-            >
-              <TrashIcon />
-            </button>
+            <>
+              {/* Reclassify: finite (progress bar) ⇄ ongoing (no bar). */}
+              <button
+                onMouseDown={(e) => { e.preventDefault(); onSetOngoing(project.id, !project.is_ongoing); }}
+                className={`text-[11px] font-semibold uppercase tracking-[0.08em] px-2.5 py-1 rounded-full transition-colors cursor-pointer flex-shrink-0 ${
+                  project.is_ongoing ? "bg-accent-100 text-accent-700" : "bg-line/70 text-stone-500 hover:text-stone-700"
+                }`}
+                title={project.is_ongoing ? "Ongoing — no progress bar. Click to make finite." : "Finite — has a progress bar. Click to make ongoing."}
+              >
+                {project.is_ongoing ? "Ongoing" : "Finite"}
+              </button>
+              <button
+                onMouseDown={(e) => { e.preventDefault(); onDeleteProject(project); }}
+                className="inline-flex items-center text-stone-400 hover:text-danger-500 transition-colors cursor-pointer flex-shrink-0"
+                title="Delete project"
+              >
+                <TrashIcon />
+              </button>
+            </>
           )}
         </div>
 
-        {/* Mobile: full-width progress below the title (aligned with the title's
-            left edge, past the drag handle), count pinned to the right. */}
-        {total > 0 && (
-          <div className="sm:hidden mt-2.5 pl-7">
+        {/* Mobile: full-width progress below the title, stretching to the left
+            margin (no title indent), count pinned to the right. */}
+        {showBar && (
+          <div className="sm:hidden mt-2.5">
             <ProgressBar completed={doneCount} total={total} />
           </div>
         )}
@@ -105,7 +131,7 @@ export default function ProjectSection({
           <p className="text-[14px] text-muted italic py-1">No tasks yet.</p>
         ) : (
           <div className="divide-y divide-line/60">
-            {sortedTasks.map((task) => (
+            {visibleTasks.map((task) => (
               <TaskRow
                 key={task.id}
                 task={task}
@@ -115,6 +141,14 @@ export default function ProjectSection({
               />
             ))}
           </div>
+        )}
+        {hiddenCount > 0 && (
+          <button
+            onClick={() => setShowCompleted((v) => !v)}
+            className="mt-1.5 text-[12px] text-stone-400 hover:text-accent-600 transition-colors cursor-pointer"
+          >
+            {showCompleted ? "Hide completed" : `Show completed (${hiddenCount})`}
+          </button>
         )}
         <div className="pt-1.5">
           <AddTaskForm

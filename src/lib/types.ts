@@ -13,6 +13,7 @@ export interface Project {
   description: string | null;
   sort_order: number;
   is_archived: boolean;
+  is_ongoing: boolean; // true = perpetual list (no progress bar)
   created_at: string;
 }
 

@@ -17,3 +17,10 @@ export async function GET(req: NextRequest) {
   `;
   return NextResponse.json(rows);
 }
+
+// Clear the Recently done feed — removes all 'completed' events.
+export async function DELETE() {
+  const sql = getDb();
+  await sql`DELETE FROM activity WHERE action = 'completed'`;
+  return NextResponse.json({ success: true });
+}

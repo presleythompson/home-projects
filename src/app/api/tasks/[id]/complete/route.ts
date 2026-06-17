@@ -46,5 +46,9 @@ export async function DELETE(
     RETURNING *
   `;
 
+  // Reversing a completion: the task is no longer done, so drop its
+  // "completed" entries from the Recently done feed.
+  await sql`DELETE FROM activity WHERE task_id = ${id} AND action = 'completed'`;
+
   return NextResponse.json(rows[0]);
 }

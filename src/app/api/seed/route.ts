@@ -25,9 +25,13 @@ export async function POST() {
       description TEXT,
       sort_order INTEGER NOT NULL DEFAULT 0,
       is_archived BOOLEAN NOT NULL DEFAULT false,
+      is_ongoing BOOLEAN NOT NULL DEFAULT false,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `;
+  // Migrate existing DBs that predate is_ongoing (CREATE TABLE IF NOT EXISTS
+  // won't add columns to an existing table).
+  await sql`ALTER TABLE projects ADD COLUMN IF NOT EXISTS is_ongoing BOOLEAN NOT NULL DEFAULT false`;
   await sql`
     CREATE TABLE IF NOT EXISTS tasks (
       id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

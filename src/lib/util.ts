@@ -23,7 +23,7 @@ export function normalizePerson(p: Person): Person {
 }
 
 export function normalizeProject(p: Project): Project {
-  return { ...p, id: num(p.id) };
+  return { ...p, id: num(p.id), is_ongoing: Boolean(p.is_ongoing) };
 }
 
 // Coerce ids to numbers and due_date to a clean string.
