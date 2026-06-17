@@ -6,6 +6,7 @@ import { dueLabel } from "@/lib/util";
 import EditableText from "./EditableText";
 import AssigneePicker from "./AssigneePicker";
 import DatePicker from "./DatePicker";
+import Avatar from "./Avatar";
 import { CalendarIcon, PersonIcon, TrashIcon } from "./icons";
 
 const TONE_BADGE: Record<string, string> = {
@@ -79,13 +80,7 @@ export default function TaskRow({
         onAssign={(pid) => onAssign(task.id, pid)}
         trigger={
           assignee ? (
-            <span
-              className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[11px] font-bold ring-1 ring-black/5"
-              style={{ background: assignee.color }}
-              title={`Assigned to ${assignee.name}`}
-            >
-              {assignee.name.charAt(0).toUpperCase()}
-            </span>
+            <Avatar person={assignee} size={24} />
           ) : (
             <span
               className="w-6 h-6 text-stone-400 flex items-center justify-center hover:text-accent-400 transition-colors"

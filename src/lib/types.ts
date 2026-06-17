@@ -2,6 +2,7 @@ export interface Person {
   id: number;
   name: string;
   color: string;
+  avatar: string | null; // emoji; null = show first initial
   sort_order: number;
   created_at: string;
 }

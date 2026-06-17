@@ -2,6 +2,7 @@
 
 import type { Activity, Person } from "@/lib/types";
 import { timeAgo } from "@/lib/util";
+import Avatar from "./Avatar";
 
 const VERB: Record<string, string> = {
   completed: "completed",
@@ -29,12 +30,13 @@ export default function ActivityFeed({
         const person = people.find((p) => p.id === a.person_id);
         return (
           <li key={a.id} className="flex items-start gap-2.5 text-[14px]">
-            <span
-              className="w-5 h-5 mt-0.5 rounded-full flex-shrink-0 flex items-center justify-center text-white text-[10px] font-bold"
-              style={{ background: person?.color ?? "#b8b0a4" }}
-            >
-              {person ? person.name.charAt(0).toUpperCase() : "?"}
-            </span>
+            {person ? (
+              <span className="mt-0.5"><Avatar person={person} size={20} /></span>
+            ) : (
+              <span className="w-5 h-5 mt-0.5 rounded-full flex-shrink-0 flex items-center justify-center text-white text-[10px] font-bold" style={{ background: "#b8b0a4" }}>
+                ?
+              </span>
+            )}
             <div className="min-w-0">
               <span className="text-stone-700">
                 <span className="font-semibold">{person?.name ?? "Someone"}</span>{" "}

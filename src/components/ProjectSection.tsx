@@ -50,39 +50,52 @@ export default function ProjectSection({
 
   return (
     <section className="border-b border-line pb-4 sm:pb-0 sm:bg-paper sm:rounded-2xl sm:shadow-[0_6px_24px_-12px_rgba(80,60,30,0.25)] sm:border sm:border-line">
-      <header className="flex items-center gap-2.5 px-0 py-3 border-b border-line/70 sm:px-6 sm:py-4">
-        {dragHandleProps && (
-          <button
-            ref={setActivatorNodeRef}
-            {...dragHandleProps}
-            className="text-stone-400 hover:text-stone-600 cursor-grab active:cursor-grabbing touch-none flex-shrink-0 -ml-1"
-            title="Drag to reorder"
-            aria-label="Drag to reorder project"
-          >
-            <GripIcon className="w-[18px] h-[18px]" />
-          </button>
-        )}
-        <h2 className="flex-1 min-w-0 flex items-center">
-          <span className="block w-full uppercase tracking-[0.12em] text-[15px] font-bold text-ink">
-            <EditableText
-              value={project.name}
-              onSave={(v) => onRenameProject(project.id, v)}
-              onEditingChange={setEditingName}
-            />
-          </span>
-        </h2>
-        <div className="flex items-center gap-3 flex-shrink-0">
-          {total > 0 && <ProgressBar completed={doneCount} total={total} />}
+      <header className="px-0 py-3 border-b border-line/70 sm:px-6 sm:py-4">
+        <div className="flex items-center gap-2.5">
+          {dragHandleProps && (
+            <button
+              ref={setActivatorNodeRef}
+              {...dragHandleProps}
+              className="text-stone-400 hover:text-stone-600 cursor-grab active:cursor-grabbing touch-none flex-shrink-0 -ml-1"
+              title="Drag to reorder"
+              aria-label="Drag to reorder project"
+            >
+              <GripIcon className="w-[18px] h-[18px]" />
+            </button>
+          )}
+          <h2 className="flex-1 min-w-0 flex items-center">
+            <span className="block w-full uppercase tracking-[0.12em] text-[15px] font-bold text-ink">
+              <EditableText
+                value={project.name}
+                onSave={(v) => onRenameProject(project.id, v)}
+                onEditingChange={setEditingName}
+              />
+            </span>
+          </h2>
+          {/* Desktop: progress in a compact inline slot. Mobile: moves below. */}
+          {total > 0 && (
+            <div className="hidden sm:block w-32 flex-shrink-0">
+              <ProgressBar completed={doneCount} total={total} />
+            </div>
+          )}
           {editingName && (
             <button
               onMouseDown={(e) => { e.preventDefault(); onDeleteProject(project); }}
-              className="inline-flex items-center text-stone-400 hover:text-danger-500 transition-colors cursor-pointer"
+              className="inline-flex items-center text-stone-400 hover:text-danger-500 transition-colors cursor-pointer flex-shrink-0"
               title="Delete project"
             >
               <TrashIcon />
             </button>
           )}
         </div>
+
+        {/* Mobile: full-width progress below the title (aligned with the title's
+            left edge, past the drag handle), count pinned to the right. */}
+        {total > 0 && (
+          <div className="sm:hidden mt-2.5 pl-7">
+            <ProgressBar completed={doneCount} total={total} />
+          </div>
+        )}
       </header>
 
       <div className="px-0 py-2 sm:px-6 sm:py-3">

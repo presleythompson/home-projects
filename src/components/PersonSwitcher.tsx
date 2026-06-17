@@ -3,34 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import type { Person } from "@/lib/types";
 import { PERSON_COLORS } from "@/lib/colors";
-
-function Avatar({ person, size = 24 }: { person: Person; size?: number }) {
-  return (
-    <span
-      className="rounded-full flex items-center justify-center text-white font-bold flex-shrink-0"
-      style={{ background: person.color, width: size, height: size, fontSize: size * 0.45 }}
-    >
-      {person.name.charAt(0).toUpperCase()}
-    </span>
-  );
-}
-
-function ColorWell({ value, onSelect }: { value: string; onSelect: (c: string) => void }) {
-  return (
-    <label
-      className="relative w-8 h-8 rounded-full flex items-center justify-center text-white text-[13px] font-bold flex-shrink-0 cursor-pointer ring-1 ring-black/10 hover:ring-2 hover:ring-stone-300 transition-all"
-      style={{ background: value }}
-      title="Change color"
-    >
-      <input
-        type="color"
-        value={value}
-        onChange={(e) => onSelect(e.target.value)}
-        className="absolute inset-0 opacity-0 cursor-pointer"
-      />
-    </label>
-  );
-}
+import Avatar from "./Avatar";
+import AvatarEditor from "./AvatarEditor";
 
 export default function PersonSwitcher({
   people,
@@ -43,14 +17,17 @@ export default function PersonSwitcher({
   people: Person[];
   currentPersonId: number | null;
   onPick: (id: number) => void;
-  onAdd: (name: string, color: string) => void;
-  onUpdate: (id: number, patch: { name?: string; color?: string }) => void;
+  onAdd: (name: string, color: string, avatar: string | null) => void;
+  onUpdate: (id: number, patch: { name?: string; color?: string; avatar?: string | null }) => void;
   onRemove: (person: Person) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [managing, setManaging] = useState(false);
+  const [editingAvatarFor, setEditingAvatarFor] = useState<number | null>(null);
   const [name, setName] = useState("");
   const [color, setColor] = useState(PERSON_COLORS[0]);
+  const [avatar, setAvatar] = useState<string | null>(null);
+  const [addAvatarOpen, setAddAvatarOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   const current = people.find((p) => p.id === currentPersonId) ?? null;
@@ -60,6 +37,8 @@ export default function PersonSwitcher({
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setOpen(false);
         setManaging(false);
+        setEditingAvatarFor(null);
+        setAddAvatarOpen(false);
       }
     }
     if (open) document.addEventListener("mousedown", onDoc);
@@ -73,8 +52,10 @@ export default function PersonSwitcher({
 
   function submitAdd() {
     const trimmed = name.trim();
-    if (trimmed) onAdd(trimmed, color);
+    if (trimmed) onAdd(trimmed, color, avatar);
     setName("");
+    setAvatar(null);
+    setAddAvatarOpen(false);
     setColor(PERSON_COLORS[people.length % PERSON_COLORS.length]);
   }
 
@@ -94,7 +75,7 @@ export default function PersonSwitcher({
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 z-30 bg-paper rounded-xl shadow-lg border border-line w-64 text-[14px] overflow-hidden">
+        <div className="absolute right-0 mt-2 z-30 bg-paper rounded-xl shadow-lg border border-line w-72 text-[14px] overflow-hidden">
           {!managing ? (
             <div className="p-1.5">
               <p className="px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-400">
@@ -125,12 +106,12 @@ export default function PersonSwitcher({
               </button>
             </div>
           ) : (
-            <div className="p-3">
+            <div className="p-3 max-h-[70vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-2.5">
                 <h3 className="text-[13px] font-semibold uppercase tracking-[0.12em] text-stone-400">Manage people</h3>
                 <button
-                  onClick={() => setManaging(false)}
-                  className="text-[13px] text-accent-600 font-medium hover:text-accent-700"
+                  onClick={() => { setManaging(false); setEditingAvatarFor(null); }}
+                  className="text-[13px] text-accent-600 font-medium hover:text-accent-700 cursor-pointer"
                 >
                   Done
                 </button>
@@ -138,45 +119,75 @@ export default function PersonSwitcher({
 
               <ul className="space-y-2.5 mb-3">
                 {people.map((p) => (
-                  <li key={p.id} className="flex items-center gap-2.5">
-                    <ColorWell value={p.color} onSelect={(c) => onUpdate(p.id, { color: c })} />
-                    <input
-                      defaultValue={p.name}
-                      onBlur={(e) => {
-                        const v = e.target.value.trim();
-                        if (v && v !== p.name) onUpdate(p.id, { name: v });
-                      }}
-                      className="flex-1 min-w-0 rounded-lg px-2 py-1.5 text-[14px] border border-transparent hover:border-stone-200 focus:border-accent-400 outline-none"
-                    />
-                    <button
-                      onClick={() => onRemove(p)}
-                      className="text-stone-300 hover:text-danger-500 transition-colors text-[18px] leading-none px-1 flex-shrink-0"
-                      title={`Remove ${p.name}`}
-                    >
-                      ×
-                    </button>
+                  <li key={p.id}>
+                    <div className="flex items-center gap-2.5">
+                      <button
+                        onClick={() => setEditingAvatarFor((cur) => (cur === p.id ? null : p.id))}
+                        className="rounded-full hover:ring-2 hover:ring-stone-300 transition-all cursor-pointer flex-shrink-0"
+                        title="Change emoji / color"
+                      >
+                        <Avatar person={p} size={32} />
+                      </button>
+                      <input
+                        defaultValue={p.name}
+                        onBlur={(e) => {
+                          const v = e.target.value.trim();
+                          if (v && v !== p.name) onUpdate(p.id, { name: v });
+                        }}
+                        className="flex-1 min-w-0 rounded-lg px-2 py-1.5 text-[14px] border border-transparent hover:border-stone-200 focus:border-accent-400 outline-none"
+                      />
+                      <button
+                        onClick={() => onRemove(p)}
+                        className="text-stone-300 hover:text-danger-500 transition-colors text-[18px] leading-none px-1 flex-shrink-0 cursor-pointer"
+                        title={`Remove ${p.name}`}
+                      >
+                        ×
+                      </button>
+                    </div>
+
+                    {editingAvatarFor === p.id && (
+                      <div className="mt-2 ml-1">
+                        <AvatarEditor
+                          color={p.color}
+                          avatar={p.avatar}
+                          onColor={(c) => onUpdate(p.id, { color: c })}
+                          onAvatar={(e) => onUpdate(p.id, { avatar: e })}
+                        />
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
 
-              {/* Add a person */}
-              <div className="flex items-center gap-2 border-t border-line pt-3">
-                <ColorWell value={color} onSelect={setColor} />
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") submitAdd();
-                  }}
-                  placeholder="Add a person…"
-                  className="flex-1 min-w-0 rounded-lg px-2 py-1.5 text-[14px] border border-stone-200 outline-none focus:border-accent-400"
-                />
-                <button
-                  onClick={submitAdd}
-                  className="rounded-lg px-3 py-1.5 text-[13px] font-semibold bg-accent-500 text-white hover:bg-accent-600 transition-colors flex-shrink-0"
-                >
-                  Add
-                </button>
+              {/* Add a person — with the same emoji/color picker */}
+              <div className="border-t border-line pt-3">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setAddAvatarOpen((v) => !v)}
+                    className="rounded-full hover:ring-2 hover:ring-stone-300 transition-all cursor-pointer flex-shrink-0"
+                    title="Choose emoji / color"
+                  >
+                    <Avatar person={{ name: name.trim() || "?", color, avatar }} size={32} />
+                  </button>
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") submitAdd(); }}
+                    placeholder="Add a person…"
+                    className="flex-1 min-w-0 rounded-lg px-2 py-1.5 text-[14px] border border-stone-200 outline-none focus:border-accent-400"
+                  />
+                  <button
+                    onClick={submitAdd}
+                    className="rounded-lg px-3 py-1.5 text-[13px] font-semibold bg-accent-500 text-white hover:bg-accent-600 transition-colors flex-shrink-0 cursor-pointer"
+                  >
+                    Add
+                  </button>
+                </div>
+                {addAvatarOpen && (
+                  <div className="mt-2">
+                    <AvatarEditor color={color} avatar={avatar} onColor={setColor} onAvatar={setAvatar} />
+                  </div>
+                )}
               </div>
             </div>
           )}

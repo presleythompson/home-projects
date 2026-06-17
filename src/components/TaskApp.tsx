@@ -131,17 +131,17 @@ export default function TaskApp({
   }
 
   // --- people ---
-  async function addPerson(name: string, color: string) {
+  async function addPerson(name: string, color: string, avatar: string | null) {
     const res = await fetch("/api/people", {
       method: "POST",
-      body: JSON.stringify({ name, color }),
+      body: JSON.stringify({ name, color, avatar }),
     });
     const person: Person = normalizePerson(await res.json());
     setPeople((prev) => [...prev, person]);
     if (currentPersonId == null) pickPerson(person.id);
   }
 
-  async function updatePerson(id: number, patch: { name?: string; color?: string }) {
+  async function updatePerson(id: number, patch: { name?: string; color?: string; avatar?: string | null }) {
     setPeople((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
     await fetch(`/api/people/${id}`, { method: "PATCH", body: JSON.stringify(patch) });
   }
@@ -362,8 +362,7 @@ export default function TaskApp({
                       people={people}
                       currentPersonId={currentPersonId}
                       onRenameProject={renameProject}
-                      onDeleteProject={(p) => setConfirm({ kind: "project", project: p })}
-                      onAddTask={addTask}
+                      onDeleteProject={(p) => setConfirm({ kind: "project", project: p })}                      onAddTask={addTask}
                       taskHandlers={taskHandlers}
                     />
                   ))}

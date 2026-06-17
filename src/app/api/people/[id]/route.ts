@@ -7,19 +7,19 @@ export async function PATCH(
 ) {
   const sql = getDb();
   const { id } = await params;
-  const { name, color } = await req.json();
+  const { name, color, avatar } = await req.json();
 
-  let rows;
-  if (name !== undefined && color !== undefined) {
-    rows = await sql`UPDATE people SET name = ${name}, color = ${color} WHERE id = ${id} RETURNING *`;
-  } else if (name !== undefined) {
-    rows = await sql`UPDATE people SET name = ${name} WHERE id = ${id} RETURNING *`;
-  } else if (color !== undefined) {
-    rows = await sql`UPDATE people SET color = ${color} WHERE id = ${id} RETURNING *`;
-  } else {
-    rows = await sql`SELECT * FROM people WHERE id = ${id}`;
+  if (name !== undefined) {
+    await sql`UPDATE people SET name = ${name} WHERE id = ${id}`;
+  }
+  if (color !== undefined) {
+    await sql`UPDATE people SET color = ${color} WHERE id = ${id}`;
+  }
+  if (avatar !== undefined) {
+    await sql`UPDATE people SET avatar = ${avatar ?? null} WHERE id = ${id}`;
   }
 
+  const rows = await sql`SELECT * FROM people WHERE id = ${id}`;
   return NextResponse.json(rows[0]);
 }
 

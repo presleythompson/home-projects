@@ -73,7 +73,7 @@ export default function DatePicker({
       </span>
 
       {open && (
-        <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-40 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:translate-x-0 sm:translate-y-0 sm:mt-1.5 bg-paper rounded-xl shadow-lg border border-line p-3 w-64 max-w-[calc(100vw-2rem)]">
+        <div className="absolute right-0 top-full mt-1.5 z-40 bg-paper rounded-xl shadow-lg border border-line p-3 w-64 max-w-[calc(100vw-2rem)]">
           <div className="flex items-center justify-between mb-2">
             <button
               onClick={() => step(-1)}
