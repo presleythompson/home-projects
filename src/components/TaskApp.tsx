@@ -358,7 +358,7 @@ export default function TaskApp({
             />
           </div>
         </div>
-        <div className="mt-5 border-t border-line" />
+        <div className="mt-5 border-t-2 border-[#d8c7a0]" />
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-7 items-start">

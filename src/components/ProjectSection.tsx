@@ -76,7 +76,7 @@ export default function ProjectSection({
   return (
     <section className="border-b-2 border-[#d8c7a0] pb-5 sm:pb-0 sm:bg-paper sm:rounded-2xl sm:shadow-[0_6px_24px_-12px_rgba(80,60,30,0.25)] sm:border sm:border-line">
       <header data-edit-group className="px-0 py-3 border-b border-line/70 sm:px-6 sm:py-4">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-start gap-2.5">
           {dragHandleProps && (
             <button
               ref={setActivatorNodeRef}
@@ -97,9 +97,10 @@ export default function ProjectSection({
               />
             </span>
           </h2>
-          {/* Desktop: progress in a compact inline slot (finite projects only). */}
+          {/* Progress, right-anchored: a compact bar on mobile (≈1/4 width),
+              a slightly wider slot on desktop. Finite projects only. */}
           {showBar && !editingName && (
-            <div className="hidden sm:block w-32 flex-shrink-0">
+            <div className="w-1/4 sm:w-32 flex-shrink-0">
               <ProgressBar completed={doneCount} total={total} />
             </div>
           )}
@@ -125,14 +126,6 @@ export default function ProjectSection({
             </>
           )}
         </div>
-
-        {/* Mobile: full-width progress below the title, stretching to the left
-            margin (no title indent), count pinned to the right. */}
-        {showBar && (
-          <div className="sm:hidden mt-2.5">
-            <ProgressBar completed={doneCount} total={total} />
-          </div>
-        )}
       </header>
 
       <div className="px-0 py-2 sm:px-6 sm:py-3">
