@@ -74,8 +74,8 @@ export default function ProjectSection({
   const visibleTasks = showCompleted ? sortedTasks : sortedTasks.filter((t) => !isStaleCompleted(t));
 
   return (
-    <section className="border-b border-line pb-4 sm:pb-0 sm:bg-paper sm:rounded-2xl sm:shadow-[0_6px_24px_-12px_rgba(80,60,30,0.25)] sm:border sm:border-line">
-      <header className="px-0 py-3 border-b border-line/70 sm:px-6 sm:py-4">
+    <section className="border-b-2 border-[#d8c7a0] pb-5 sm:pb-0 sm:bg-paper sm:rounded-2xl sm:shadow-[0_6px_24px_-12px_rgba(80,60,30,0.25)] sm:border sm:border-line">
+      <header data-edit-group className="px-0 py-3 border-b border-line/70 sm:px-6 sm:py-4">
         <div className="flex items-center gap-2.5">
           {dragHandleProps && (
             <button

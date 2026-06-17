@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import type { Person } from "@/lib/types";
 import Avatar from "./Avatar";
+import { useOutsideDismiss } from "@/lib/useOutsideDismiss";
 
 export default function AssigneePicker({
   people,
@@ -21,13 +22,7 @@ export default function AssigneePicker({
   const ref = useRef<HTMLDivElement>(null);
   const assignee = people.find((p) => p.id === assigneeId) ?? null;
 
-  useEffect(() => {
-    function onDoc(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    if (open) document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [open]);
+  useOutsideDismiss(open, ref, () => setOpen(false));
 
   return (
     <span className="relative inline-block align-baseline" ref={ref}>

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { todayYmd } from "@/lib/util";
+import { useOutsideDismiss } from "@/lib/useOutsideDismiss";
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
 const MONTHS = [
@@ -37,13 +38,7 @@ export default function DatePicker({
     }
   }, [open, value, today]);
 
-  useEffect(() => {
-    function onDoc(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    if (open) document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [open]);
+  useOutsideDismiss(open, ref, () => setOpen(false));
 
   const firstDow = new Date(view.y, view.m, 1).getDay();
   const daysInMonth = new Date(view.y, view.m + 1, 0).getDate();

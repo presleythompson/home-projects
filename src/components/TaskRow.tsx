@@ -45,7 +45,7 @@ export default function TaskRow({
     // items-start + a fixed 24px line height (leading-6) so every control aligns
     // to the FIRST line of the title, even when the title wraps. Each control
     // sits in a matching h-6 centered box so set/unset states line up.
-    <div className="group flex items-start gap-2.5 py-2.5">
+    <div data-edit-group className="group flex items-start gap-2.5 py-2.5">
       <span className="flex items-center h-6 flex-shrink-0">
         <input type="checkbox" checked={task.is_done} onChange={() => onToggle(task)} />
       </span>

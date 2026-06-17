@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import type { Person } from "@/lib/types";
+import { useOutsideDismiss } from "@/lib/useOutsideDismiss";
 import { dueLabel } from "@/lib/util";
 import DatePicker from "./DatePicker";
 import AssigneePicker from "./AssigneePicker";
@@ -44,14 +45,9 @@ export default function AddTaskForm({
     setOpen(false);
   }
 
-  // Clicking/tapping outside cancels (so no explicit Cancel button needed).
-  useEffect(() => {
-    function onDoc(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) reset();
-    }
-    if (open) document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [open]);
+  // Clicking/tapping outside cancels (so no explicit Cancel button needed),
+  // and that tap is swallowed so it doesn't activate something else.
+  useOutsideDismiss(open, ref, reset);
 
   if (!open) {
     return (

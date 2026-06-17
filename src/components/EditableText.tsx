@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useOutsideDismiss } from "@/lib/useOutsideDismiss";
 
 export default function EditableText({
   value,
@@ -18,9 +19,13 @@ export default function EditableText({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (editing) {
-      inputRef.current?.focus();
-      inputRef.current?.select();
+    if (editing && inputRef.current) {
+      const el = inputRef.current;
+      el.focus();
+      // Place the caret at the end rather than selecting all — friendlier on
+      // touch, where select-all + retype is awkward.
+      const end = el.value.length;
+      el.setSelectionRange(end, end);
     }
   }, [editing]);
 
@@ -31,6 +36,10 @@ export default function EditableText({
   }, [editing]);
 
   useEffect(() => { setText(value); }, [value]);
+
+  // Tapping outside saves and exits — and swallows that tap so it doesn't also
+  // start editing whatever was under it.
+  useOutsideDismiss(editing, inputRef, () => handleSave());
 
   function handleSave() {
     const trimmed = text.trim();
