@@ -1,10 +1,12 @@
 "use client";
 
+import type { HTMLAttributes } from "react";
 import type { Person, Task, ProjectWithTasks } from "@/lib/types";
 import EditableText from "./EditableText";
 import ProgressBar from "./ProgressBar";
 import TaskRow from "./TaskRow";
 import AddTaskForm from "./AddTaskForm";
+import { GripIcon } from "./icons";
 
 export default function ProjectSection({
   project,
@@ -14,6 +16,8 @@ export default function ProjectSection({
   onDeleteProject,
   onAddTask,
   taskHandlers,
+  dragHandleProps,
+  setActivatorNodeRef,
 }: {
   project: ProjectWithTasks;
   people: Person[];
@@ -28,6 +32,8 @@ export default function ProjectSection({
     onSetDue: (id: number, due: string | null) => void;
     onDelete: (task: Task) => void;
   };
+  dragHandleProps?: HTMLAttributes<HTMLButtonElement>;
+  setActivatorNodeRef?: (el: HTMLElement | null) => void;
 }) {
   const total = project.tasks.length;
   const doneCount = project.tasks.filter((t) => t.is_done).length;
@@ -43,7 +49,18 @@ export default function ProjectSection({
 
   return (
     <section className="border-b border-line pb-4 sm:pb-0 sm:bg-paper sm:rounded-2xl sm:shadow-[0_6px_24px_-12px_rgba(80,60,30,0.25)] sm:border sm:border-line">
-      <header className="flex items-center gap-3 px-0 py-3 border-b border-line/70 sm:px-6 sm:py-4">
+      <header className="flex items-center gap-2.5 px-0 py-3 border-b border-line/70 sm:px-6 sm:py-4">
+        {dragHandleProps && (
+          <button
+            ref={setActivatorNodeRef}
+            {...dragHandleProps}
+            className="text-stone-400 hover:text-stone-600 cursor-grab active:cursor-grabbing touch-none flex-shrink-0 -ml-1"
+            title="Drag to reorder"
+            aria-label="Drag to reorder project"
+          >
+            <GripIcon className="w-[18px] h-[18px]" />
+          </button>
+        )}
         <h2 className="flex items-center gap-2.5 min-w-0">
           <span className="w-1.5 h-5 rounded-sm bg-accent-500 flex-shrink-0" />
           <span className="uppercase tracking-[0.12em] text-[15px] font-bold text-ink">
