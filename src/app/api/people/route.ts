@@ -12,14 +12,22 @@ export async function POST(req: NextRequest) {
   const sql = getDb();
   const { name, color, avatar } = await req.json();
 
-  const maxOrder = await sql`SELECT COALESCE(MAX(sort_order), -1) as max_order FROM people`;
-  const sort_order = (maxOrder[0]?.max_order ?? -1) + 1;
-  const chosenColor = color ?? PERSON_COLORS[sort_order % PERSON_COLORS.length];
+  try {
+    const maxOrder = await sql`SELECT COALESCE(MAX(sort_order), -1) as max_order FROM people`;
+    const sort_order = (maxOrder[0]?.max_order ?? -1) + 1;
+    const chosenColor = color ?? PERSON_COLORS[sort_order % PERSON_COLORS.length];
 
-  const rows = await sql`
-    INSERT INTO people (name, color, avatar, sort_order)
-    VALUES (${name}, ${chosenColor}, ${avatar ?? null}, ${sort_order})
-    RETURNING *
-  `;
-  return NextResponse.json(rows[0]);
+    const rows = await sql`
+      INSERT INTO people (name, color, avatar, sort_order)
+      VALUES (${name}, ${chosenColor}, ${avatar ?? null}, ${sort_order})
+      RETURNING *
+    `;
+    return NextResponse.json(rows[0]);
+  } catch (err) {
+    console.error("Failed to add person", err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Failed to add person" },
+      { status: 500 }
+    );
+  }
 }

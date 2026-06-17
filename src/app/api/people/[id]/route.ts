@@ -30,9 +30,20 @@ export async function DELETE(
   const sql = getDb();
   const { id } = await params;
 
-  // FKs on tasks.assignee_id / completed_by are ON DELETE SET NULL, so
-  // removing a person just unlinks them from tasks and activity.
-  await sql`DELETE FROM people WHERE id = ${id}`;
-
-  return NextResponse.json({ success: true });
+  try {
+    // Unlink references first, then delete. We don't rely on the FK being
+    // declared ON DELETE SET NULL — an older live DB may have created these
+    // constraints without it, which would make the delete fail with a FK error.
+    await sql`UPDATE tasks SET assignee_id = NULL WHERE assignee_id = ${id}`;
+    await sql`UPDATE tasks SET completed_by = NULL WHERE completed_by = ${id}`;
+    await sql`UPDATE activity SET person_id = NULL WHERE person_id = ${id}`;
+    await sql`DELETE FROM people WHERE id = ${id}`;
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("Failed to delete person", id, err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Failed to delete person" },
+      { status: 500 }
+    );
+  }
 }

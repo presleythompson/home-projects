@@ -35,8 +35,10 @@ export function getDb(): SqlTaggedTemplate {
     throw new Error("DATABASE_URL is not set. Add it to your environment variables.");
   }
 
-  // Use raw pg for local Postgres, Neon driver for production
-  if (databaseUrl.startsWith("postgresql://") && databaseUrl.includes("localhost") || databaseUrl.includes("127.0.0.1")) {
+  // Use raw pg for a local Postgres host, the Neon driver everywhere else.
+  // (Parenthesized: the previous `A && B || C` grouping was a precedence bug.)
+  const isLocal = databaseUrl.includes("localhost") || databaseUrl.includes("127.0.0.1");
+  if (isLocal) {
     return getLocalSql();
   }
 

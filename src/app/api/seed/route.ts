@@ -29,8 +29,11 @@ export async function POST() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `;
-  // Migrate existing DBs that predate is_ongoing (CREATE TABLE IF NOT EXISTS
-  // won't add columns to an existing table).
+  // Migrate existing DBs that predate later columns (CREATE TABLE IF NOT EXISTS
+  // won't add columns to a table that already exists). These run on every POST
+  // /api/seed — before the re-seed guard below — so an already-seeded live DB
+  // is healed just by hitting this endpoint again.
+  await sql`ALTER TABLE people ADD COLUMN IF NOT EXISTS avatar TEXT`;
   await sql`ALTER TABLE projects ADD COLUMN IF NOT EXISTS is_ongoing BOOLEAN NOT NULL DEFAULT false`;
   await sql`
     CREATE TABLE IF NOT EXISTS tasks (
