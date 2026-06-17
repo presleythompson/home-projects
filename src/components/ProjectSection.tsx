@@ -1,12 +1,12 @@
 "use client";
 
-import type { HTMLAttributes } from "react";
+import { useState, type HTMLAttributes } from "react";
 import type { Person, Task, ProjectWithTasks } from "@/lib/types";
 import EditableText from "./EditableText";
 import ProgressBar from "./ProgressBar";
 import TaskRow from "./TaskRow";
 import AddTaskForm from "./AddTaskForm";
-import { GripIcon } from "./icons";
+import { GripIcon, TrashIcon } from "./icons";
 
 export default function ProjectSection({
   project,
@@ -35,6 +35,7 @@ export default function ProjectSection({
   dragHandleProps?: HTMLAttributes<HTMLButtonElement>;
   setActivatorNodeRef?: (el: HTMLElement | null) => void;
 }) {
+  const [editingName, setEditingName] = useState(false);
   const total = project.tasks.length;
   const doneCount = project.tasks.filter((t) => t.is_done).length;
 
@@ -61,20 +62,26 @@ export default function ProjectSection({
             <GripIcon className="w-[18px] h-[18px]" />
           </button>
         )}
-        <h2 className="flex items-center min-w-0">
-          <span className="uppercase tracking-[0.12em] text-[15px] font-bold text-ink">
-            <EditableText value={project.name} onSave={(v) => onRenameProject(project.id, v)} />
+        <h2 className="flex-1 min-w-0 flex items-center">
+          <span className="block w-full uppercase tracking-[0.12em] text-[15px] font-bold text-ink">
+            <EditableText
+              value={project.name}
+              onSave={(v) => onRenameProject(project.id, v)}
+              onEditingChange={setEditingName}
+            />
           </span>
         </h2>
-        <div className="ml-auto flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-shrink-0">
           {total > 0 && <ProgressBar completed={doneCount} total={total} />}
-          <button
-            onClick={() => onDeleteProject(project)}
-            className="text-stone-300 hover:text-danger-500 transition-colors text-[18px] leading-none"
-            title="Delete project"
-          >
-            ×
-          </button>
+          {editingName && (
+            <button
+              onMouseDown={(e) => { e.preventDefault(); onDeleteProject(project); }}
+              className="inline-flex items-center text-stone-400 hover:text-danger-500 transition-colors cursor-pointer"
+              title="Delete project"
+            >
+              <TrashIcon />
+            </button>
+          )}
         </div>
       </header>
 

@@ -6,10 +6,12 @@ export default function EditableText({
   value,
   onSave,
   className = "",
+  onEditingChange,
 }: {
   value: string;
   onSave: (newValue: string) => void;
   className?: string;
+  onEditingChange?: (editing: boolean) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(value);
@@ -20,6 +22,12 @@ export default function EditableText({
       inputRef.current?.focus();
       inputRef.current?.select();
     }
+  }, [editing]);
+
+  // Let the parent know (e.g. to reveal a delete control while editing).
+  useEffect(() => {
+    onEditingChange?.(editing);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing]);
 
   useEffect(() => { setText(value); }, [value]);
@@ -42,7 +50,7 @@ export default function EditableText({
           if (e.key === "Enter") handleSave();
           if (e.key === "Escape") { setText(value); setEditing(false); }
         }}
-        className={`border border-accent-400 rounded px-1.5 py-0 outline-none bg-accent-50 ${className}`}
+        className={`w-full min-w-0 box-border border border-accent-400 rounded px-1.5 py-0.5 outline-none bg-accent-50 ${className}`}
       />
     );
   }
