@@ -49,13 +49,22 @@ export default function ProjectSection({
   const doneCount = project.tasks.filter((t) => t.is_done).length;
   const showBar = !project.is_ongoing && total > 0;
 
-  // Completed one-time tasks sink to the bottom (most recently done first there).
   const sortedTasks = [...project.tasks].sort((a, b) => {
+    // Completed tasks sink to the bottom (most recently done first there).
     if (a.is_done !== b.is_done) return a.is_done ? 1 : -1;
     if (a.is_done && b.is_done) {
       // completed_at may arrive as a Date (server) or string (optimistic update);
       // coerce both so the comparison is safe either way.
       return String(b.completed_at ?? "").localeCompare(String(a.completed_at ?? ""));
+    }
+    // Open tasks auto-sort by due date: soonest (incl. overdue) first, dated
+    // before undated. due_date is YYYY-MM-DD, so string compare is chronological.
+    if (a.due_date && b.due_date) {
+      if (a.due_date !== b.due_date) return a.due_date < b.due_date ? -1 : 1;
+    } else if (a.due_date) {
+      return -1;
+    } else if (b.due_date) {
+      return 1;
     }
     return a.sort_order - b.sort_order;
   });
