@@ -128,7 +128,9 @@ export default function PeopleView({
                     people={people}
                     currentPersonId={currentPersonId}
                     defaultAssigneeId={section.person?.id ?? null}
-                    onAdd={(input) => onAddTask(null, input)}
+                    showAssignee={false}
+                    projects={projects.map((p) => ({ id: p.id, name: p.name }))}
+                    onAdd={(input) => onAddTask(input.project_id ?? null, input)}
                   />
                   {section.items.length >= 2 && (
                     <button

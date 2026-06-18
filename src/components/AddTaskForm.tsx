@@ -6,6 +6,7 @@ import { useOutsideDismiss } from "@/lib/useOutsideDismiss";
 import { dueLabel } from "@/lib/util";
 import DatePicker from "./DatePicker";
 import AssigneePicker from "./AssigneePicker";
+import ProjectPicker from "./ProjectPicker";
 import Avatar from "./Avatar";
 import { CalendarIcon, PersonIcon } from "./icons";
 
@@ -21,23 +22,42 @@ export default function AddTaskForm({
   currentPersonId,
   onAdd,
   defaultAssigneeId = null,
+  projects,
+  showAssignee = true,
 }: {
   people: Person[];
   currentPersonId: number | null;
-  onAdd: (input: { title: string; due_date: string | null; assignee_id: number | null }) => void;
+  onAdd: (input: {
+    title: string;
+    due_date: string | null;
+    assignee_id: number | null;
+    project_id?: number | null;
+  }) => void;
   // Pre-fill the assignee (e.g. the person whose section you're adding under).
   defaultAssigneeId?: number | null;
+  // When provided, a project picker is shown (used in the by-person view, where
+  // there's no implied project). Omitted in the project view.
+  projects?: { id: number; name: string }[];
+  // The by-person view hides the assignee picker — the task is always assigned
+  // to the section it's added from (defaultAssigneeId).
+  showAssignee?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [due, setDue] = useState<string | null>(null);
   const [assigneeId, setAssigneeId] = useState<number | null>(defaultAssigneeId);
+  const [projectId, setProjectId] = useState<number | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   function submit() {
     const trimmed = title.trim();
     if (!trimmed) { reset(); return; }
-    onAdd({ title: trimmed, due_date: due, assignee_id: assigneeId });
+    onAdd({
+      title: trimmed,
+      due_date: due,
+      assignee_id: assigneeId,
+      ...(projects ? { project_id: projectId } : {}),
+    });
     reset();
   }
 
@@ -45,6 +65,7 @@ export default function AddTaskForm({
     setTitle("");
     setDue(null);
     setAssigneeId(defaultAssigneeId);
+    setProjectId(null);
     setOpen(false);
   }
 
@@ -80,6 +101,11 @@ export default function AddTaskForm({
         className="flex-1 min-w-[160px] rounded-lg px-3 py-1.5 text-[15px] border border-stone-200 outline-none focus:border-accent-400 bg-paper"
       />
 
+      {/* Project (by-person view only) */}
+      {projects && (
+        <ProjectPicker projects={projects} value={projectId} onChange={setProjectId} />
+      )}
+
       {/* Due date */}
       <DatePicker
         value={due}
@@ -97,22 +123,24 @@ export default function AddTaskForm({
         }
       />
 
-      {/* Assignee */}
-      <AssigneePicker
-        people={people}
-        assigneeId={assigneeId}
-        currentPersonId={currentPersonId}
-        onAssign={setAssigneeId}
-        trigger={
-          assignee ? (
-            <Avatar person={assignee} size={24} />
-          ) : (
-            <span className="w-6 h-6 text-stone-400 flex items-center justify-center hover:text-accent-400 transition-colors" title="Assign someone">
-              <PersonIcon />
-            </span>
-          )
-        }
-      />
+      {/* Assignee — hidden in the by-person view (always assigned to the section) */}
+      {showAssignee && (
+        <AssigneePicker
+          people={people}
+          assigneeId={assigneeId}
+          currentPersonId={currentPersonId}
+          onAssign={setAssigneeId}
+          trigger={
+            assignee ? (
+              <Avatar person={assignee} size={24} />
+            ) : (
+              <span className="w-6 h-6 text-stone-400 flex items-center justify-center hover:text-accent-400 transition-colors" title="Assign someone">
+                <PersonIcon />
+              </span>
+            )
+          }
+        />
+      )}
 
       <button
         onClick={submit}
