@@ -46,12 +46,19 @@ export default function AddTaskForm({
   const [title, setTitle] = useState("");
   const [due, setDue] = useState<string | null>(null);
   const [assigneeId, setAssigneeId] = useState<number | null>(defaultAssigneeId);
-  const [projectId, setProjectId] = useState<number | null>(null);
+  // A project is required when the picker is shown (by-person view). Pre-select
+  // it if there's only one project; otherwise the user must choose.
+  const initialProjectId = projects && projects.length === 1 ? projects[0].id : null;
+  const [projectId, setProjectId] = useState<number | null>(initialProjectId);
   const ref = useRef<HTMLDivElement>(null);
+
+  // When the picker is shown, a project must be chosen before adding.
+  const projectMissing = !!projects && projectId == null;
 
   function submit() {
     const trimmed = title.trim();
     if (!trimmed) { reset(); return; }
+    if (projectMissing) return; // keep the form open until a project is picked
     onAdd({
       title: trimmed,
       due_date: due,
@@ -65,7 +72,7 @@ export default function AddTaskForm({
     setTitle("");
     setDue(null);
     setAssigneeId(defaultAssigneeId);
-    setProjectId(null);
+    setProjectId(initialProjectId);
     setOpen(false);
   }
 
@@ -144,7 +151,9 @@ export default function AddTaskForm({
 
       <button
         onClick={submit}
-        className="rounded-lg px-3 py-1.5 text-[14px] font-semibold bg-accent-500 text-white hover:bg-accent-600 transition-colors cursor-pointer"
+        disabled={projectMissing}
+        title={projectMissing ? "Choose a project first" : undefined}
+        className="rounded-lg px-3 py-1.5 text-[14px] font-semibold bg-accent-500 text-white hover:bg-accent-600 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default disabled:hover:bg-accent-500"
       >
         Add
       </button>

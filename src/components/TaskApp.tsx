@@ -399,17 +399,22 @@ export default function TaskApp({
     onDelete: (task: Task) => setConfirm({ kind: "task", task }),
   };
 
-  async function doConfirmedDelete() {
-    if (!confirm) return;
-    if (confirm.kind === "task") {
-      removeTaskFromState(confirm.task.id);
-      await fetch(`/api/tasks/${confirm.task.id}`, { method: "DELETE" });
-    } else if (confirm.kind === "project") {
-      await deleteProject(confirm.project);
-    } else {
-      await removePerson(confirm.person);
-    }
+  function doConfirmedDelete() {
+    const c = confirm;
+    if (!c) return;
+    // Close the dialog and remove the item immediately — the handlers below all
+    // update local state optimistically, so the server DELETE happens in the
+    // background. (Previously we awaited the round-trip before closing, which
+    // left the dialog hanging for seconds and invited double-clicks.)
     setConfirm(null);
+    if (c.kind === "task") {
+      removeTaskFromState(c.task.id);
+      fetch(`/api/tasks/${c.task.id}`, { method: "DELETE" });
+    } else if (c.kind === "project") {
+      deleteProject(c.project);
+    } else {
+      removePerson(c.person);
+    }
   }
 
   async function seedDatabase() {
