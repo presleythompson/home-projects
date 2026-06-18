@@ -5,6 +5,7 @@ import type { Person, Task, ProjectWithTasks } from "@/lib/types";
 import { compareByDue } from "@/lib/util";
 import Avatar from "./Avatar";
 import SortableTaskList from "./SortableTaskList";
+import AddTaskForm from "./AddTaskForm";
 import { ReorderIcon } from "./icons";
 
 type Handlers = {
@@ -25,6 +26,7 @@ export default function PeopleView({
   currentPersonId,
   taskHandlers,
   onReorderTasks,
+  onAddTask,
 }: {
   people: Person[];
   projects: ProjectWithTasks[];
@@ -32,6 +34,10 @@ export default function PeopleView({
   currentPersonId: number | null;
   taskHandlers: Handlers;
   onReorderTasks: (ids: number[]) => void;
+  onAddTask: (
+    projectId: number | null,
+    input: { title: string; due_date: string | null; assignee_id: number | null }
+  ) => void;
 }) {
   // Only one section is in reorder mode at a time (tracked by section key).
   const [reorderingKey, setReorderingKey] = useState<string | null>(null);
@@ -107,27 +113,32 @@ export default function PeopleView({
                   reordering={reorderingKey === section.key}
                 />
               )}
-              {section.items.length >= 2 && (
+              {reorderingKey === section.key ? (
                 <div className="pt-2 flex justify-end">
                   <button
-                    onClick={() =>
-                      setReorderingKey((cur) => (cur === section.key ? null : section.key))
-                    }
-                    className={`inline-flex items-center gap-1 text-[12px] transition-colors cursor-pointer ${
-                      reorderingKey === section.key
-                        ? "font-semibold text-accent-600 hover:text-accent-700"
-                        : "text-stone-400 hover:text-accent-600"
-                    }`}
+                    onClick={() => setReorderingKey(null)}
+                    className="text-[13px] font-semibold text-accent-600 hover:text-accent-700 transition-colors cursor-pointer"
                   >
-                    {reorderingKey === section.key ? (
-                      "Done reordering"
-                    ) : (
-                      <>
-                        <ReorderIcon className="w-3.5 h-3.5" />
-                        Reorder
-                      </>
-                    )}
+                    Done reordering
                   </button>
+                </div>
+              ) : (
+                <div className="pt-1.5 flex items-center">
+                  <AddTaskForm
+                    people={people}
+                    currentPersonId={currentPersonId}
+                    defaultAssigneeId={section.person?.id ?? null}
+                    onAdd={(input) => onAddTask(null, input)}
+                  />
+                  {section.items.length >= 2 && (
+                    <button
+                      onClick={() => setReorderingKey(section.key)}
+                      className="ml-auto inline-flex items-center gap-1 text-[12px] text-stone-400 hover:text-accent-600 transition-colors cursor-pointer flex-shrink-0"
+                    >
+                      <ReorderIcon className="w-3.5 h-3.5" />
+                      Reorder
+                    </button>
+                  )}
                 </div>
               )}
             </div>

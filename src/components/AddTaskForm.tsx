@@ -20,15 +20,18 @@ export default function AddTaskForm({
   people,
   currentPersonId,
   onAdd,
+  defaultAssigneeId = null,
 }: {
   people: Person[];
   currentPersonId: number | null;
   onAdd: (input: { title: string; due_date: string | null; assignee_id: number | null }) => void;
+  // Pre-fill the assignee (e.g. the person whose section you're adding under).
+  defaultAssigneeId?: number | null;
 }) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [due, setDue] = useState<string | null>(null);
-  const [assigneeId, setAssigneeId] = useState<number | null>(null);
+  const [assigneeId, setAssigneeId] = useState<number | null>(defaultAssigneeId);
   const ref = useRef<HTMLDivElement>(null);
 
   function submit() {
@@ -41,7 +44,7 @@ export default function AddTaskForm({
   function reset() {
     setTitle("");
     setDue(null);
-    setAssigneeId(null);
+    setAssigneeId(defaultAssigneeId);
     setOpen(false);
   }
 

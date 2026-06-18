@@ -322,8 +322,10 @@ export default function TaskApp({
   }
 
   // --- tasks ---
+  // projectId null = unfiled (e.g. a task added from a person's section in the
+  // by-person view); it lands in looseTasks rather than a project.
   async function addTask(
-    projectId: number,
+    projectId: number | null,
     input: { title: string; due_date: string | null; assignee_id: number | null }
   ) {
     const res = await fetch("/api/tasks", {
@@ -331,9 +333,13 @@ export default function TaskApp({
       body: JSON.stringify({ project_id: projectId, ...input, actorId: currentPersonId }),
     });
     const task = normalizeTask(await res.json());
-    setProjects((prev) =>
-      prev.map((p) => (p.id === projectId ? { ...p, tasks: [...p.tasks, task] } : p))
-    );
+    if (projectId == null) {
+      setLooseTasks((prev) => [...prev, task]);
+    } else {
+      setProjects((prev) =>
+        prev.map((p) => (p.id === projectId ? { ...p, tasks: [...p.tasks, task] } : p))
+      );
+    }
     refreshActivity();
   }
 
@@ -495,6 +501,7 @@ export default function TaskApp({
             currentPersonId={currentPersonId}
             taskHandlers={taskHandlers}
             onReorderTasks={reorderTasks}
+            onAddTask={addTask}
           />
         ) : (
         <div className="space-y-5">
