@@ -1,12 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import type { Person, Task, ProjectWithTasks } from "@/lib/types";
 import { compareByDue } from "@/lib/util";
 import Avatar from "./Avatar";
 import SortableTaskList from "./SortableTaskList";
 import AddTaskForm from "./AddTaskForm";
-import { ReorderIcon } from "./icons";
 
 type Handlers = {
   onToggle: (task: Task) => void;
@@ -39,9 +37,6 @@ export default function PeopleView({
     input: { title: string; due_date: string | null; assignee_id: number | null }
   ) => void;
 }) {
-  // Only one section is in reorder mode at a time (tracked by section key).
-  const [reorderingKey, setReorderingKey] = useState<string | null>(null);
-
   // Every task carries its project name for context once grouping is by person.
   const labeled: { task: Task; projectLabel: string }[] = [
     ...projects.flatMap((p) => p.tasks.map((task) => ({ task, projectLabel: p.name }))),
@@ -77,10 +72,7 @@ export default function PeopleView({
           className="rise-in relative"
           style={{ animationDelay: `${i * 60}ms`, zIndex: sections.length - i }}
         >
-          <section
-            data-reordering={reorderingKey === section.key || undefined}
-            className="border-b-2 border-[#d8c7a0] pb-5 sm:pb-0 sm:bg-paper sm:rounded-2xl sm:shadow-[0_6px_24px_-12px_rgba(80,60,30,0.25)] sm:border sm:border-line"
-          >
+          <section className="border-b-2 border-[#d8c7a0] pb-5 sm:pb-0 sm:bg-paper sm:rounded-2xl sm:shadow-[0_6px_24px_-12px_rgba(80,60,30,0.25)] sm:border sm:border-line">
             <header className="px-0 py-3 border-b border-line/70 sm:px-6 sm:py-4">
               <div className="flex items-center gap-2.5">
                 {section.person ? (
@@ -110,39 +102,18 @@ export default function PeopleView({
                   taskHandlers={taskHandlers}
                   onReorder={onReorderTasks}
                   projectLabelFor={(t) => labelById.get(t.id)}
-                  reordering={reorderingKey === section.key}
                 />
               )}
-              {reorderingKey === section.key ? (
-                <div className="pt-2 flex justify-end">
-                  <button
-                    onClick={() => setReorderingKey(null)}
-                    className="text-[13px] font-semibold text-accent-600 hover:text-accent-700 transition-colors cursor-pointer"
-                  >
-                    Done reordering
-                  </button>
-                </div>
-              ) : (
-                <div className="pt-1.5 flex items-center">
-                  <AddTaskForm
-                    people={people}
-                    currentPersonId={currentPersonId}
-                    defaultAssigneeId={section.person?.id ?? null}
-                    showAssignee={false}
-                    projects={projects.map((p) => ({ id: p.id, name: p.name }))}
-                    onAdd={(input) => onAddTask(input.project_id ?? null, input)}
-                  />
-                  {section.items.length >= 2 && (
-                    <button
-                      onClick={() => setReorderingKey(section.key)}
-                      className="ml-auto inline-flex items-center gap-1 text-[12px] text-stone-400 hover:text-accent-600 transition-colors cursor-pointer flex-shrink-0"
-                    >
-                      <ReorderIcon className="w-3.5 h-3.5" />
-                      Reorder
-                    </button>
-                  )}
-                </div>
-              )}
+              <div className="pt-1.5">
+                <AddTaskForm
+                  people={people}
+                  currentPersonId={currentPersonId}
+                  defaultAssigneeId={section.person?.id ?? null}
+                  showAssignee={false}
+                  projects={projects.map((p) => ({ id: p.id, name: p.name }))}
+                  onAdd={(input) => onAddTask(input.project_id ?? null, input)}
+                />
+              </div>
             </div>
           </section>
         </div>

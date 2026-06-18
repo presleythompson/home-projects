@@ -42,6 +42,22 @@ export function ReorderIcon({ className = "w-[18px] h-[18px]" }: { className?: s
   );
 }
 
+export function ChevronUpIcon({ className = "w-[18px] h-[18px]" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M6 15l6-6 6 6" />
+    </svg>
+  );
+}
+
+export function ChevronDownIcon({ className = "w-[18px] h-[18px]" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
 export function PersonIcon({ className = "w-[18px] h-[18px]" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>

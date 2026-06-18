@@ -20,9 +20,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Person, Task } from "@/lib/types";
-import { dueLabel } from "@/lib/util";
 import TaskRow from "./TaskRow";
-import { GripIcon } from "./icons";
 
 type Handlers = {
   onToggle: (task: Task) => void;
@@ -32,11 +30,22 @@ type Handlers = {
   onDelete: (task: Task) => void;
 };
 
-// A reorder-mode row: a grip (the only drag activator) + the title. Other
-// controls are intentionally hidden while reordering so the gesture is
-// unambiguous and there's nothing to mis-tap. Handle-only drag means iOS never
-// hijacks it with text selection.
-function ReorderRow({ task, projectLabel }: { task: Task; projectLabel?: string }) {
+// Each row is a sortable item. The drag activator is the grip that TaskRow shows
+// in place of the checkbox while its title is being edited — so there's no
+// permanent drag affordance, but any open task can be reordered.
+function SortableTaskRow({
+  task,
+  people,
+  currentPersonId,
+  taskHandlers,
+  projectLabel,
+}: {
+  task: Task;
+  people: Person[];
+  currentPersonId: number | null;
+  taskHandlers: Handlers;
+  projectLabel?: string;
+}) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
     useSortable({ id: task.id });
 
@@ -48,24 +57,18 @@ function ReorderRow({ task, projectLabel }: { task: Task; projectLabel?: string 
     opacity: isDragging ? 0.85 : undefined,
   };
 
-  const due = dueLabel(task.due_date);
-
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center gap-2.5 py-2.5 select-none">
-      <button
-        ref={setActivatorNodeRef}
-        {...attributes}
-        {...listeners}
-        className="text-stone-400 hover:text-stone-600 cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
-        aria-label="Drag to reorder task"
-      >
-        <GripIcon className="w-[18px] h-[18px]" />
-      </button>
-      <span className="flex-1 min-w-0">
-        <span className="block text-[16px] leading-6 text-ink truncate">{task.title}</span>
-        {projectLabel && <span className="block mt-0.5 text-[12px] text-muted truncate">{projectLabel}</span>}
-      </span>
-      {task.due_date && <span className="text-[12px] text-muted flex-shrink-0">{due.text}</span>}
+    <div ref={setNodeRef} style={style}>
+      <TaskRow
+        task={task}
+        people={people}
+        currentPersonId={currentPersonId}
+        projectLabel={projectLabel}
+        dragAttributes={attributes}
+        dragListeners={listeners}
+        setActivatorNodeRef={setActivatorNodeRef}
+        {...taskHandlers}
+      />
     </div>
   );
 }
@@ -77,7 +80,6 @@ export default function SortableTaskList({
   taskHandlers,
   onReorder,
   projectLabelFor,
-  reordering,
 }: {
   tasks: Task[];
   people: Person[];
@@ -85,16 +87,14 @@ export default function SortableTaskList({
   taskHandlers: Handlers;
   onReorder: (ids: number[]) => void;
   projectLabelFor?: (task: Task) => string | undefined;
-  reordering: boolean;
 }) {
   // @dnd-kit generates a11y ids that differ server vs client; only mount the
   // drag tree after hydration to avoid a mismatch warning.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  // Drag starts from the grip handle, so immediate activation is fine — no
-  // long-press needed. The handle has touch-action:none so dragging it won't
-  // scroll, while touching elsewhere still scrolls.
+  // Drag starts from the grip (shown on title-edit), so immediate activation is
+  // fine. The grip has touch-action:none so dragging it won't scroll.
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 6 } }),
@@ -110,8 +110,8 @@ export default function SortableTaskList({
     onReorder(arrayMove(tasks, oldIndex, newIndex).map((t) => t.id));
   }
 
-  // Normal mode: the usual interactive rows, no drag tree at all.
-  if (!reordering || !mounted) {
+  if (!mounted) {
+    // Pre-hydration: plain rows (no drag tree, no grip).
     return (
       <div className="divide-y divide-line/60">
         {tasks.map((task) => (
@@ -128,13 +128,19 @@ export default function SortableTaskList({
     );
   }
 
-  // Reorder mode: grip-drag simplified rows.
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
         <div className="divide-y divide-line/60">
           {tasks.map((task) => (
-            <ReorderRow key={task.id} task={task} projectLabel={projectLabelFor?.(task)} />
+            <SortableTaskRow
+              key={task.id}
+              task={task}
+              people={people}
+              currentPersonId={currentPersonId}
+              taskHandlers={taskHandlers}
+              projectLabel={projectLabelFor?.(task)}
+            />
           ))}
         </div>
       </SortableContext>

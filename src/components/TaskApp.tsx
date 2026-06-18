@@ -1,24 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  TouchSensor,
-  KeyboardSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  useSortable,
-  arrayMove,
-  verticalListSortingStrategy,
-  sortableKeyboardCoordinates,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import { arrayMove } from "@dnd-kit/sortable";
 import type {
   Person,
   Project,
@@ -31,45 +14,11 @@ import PersonSwitcher from "./PersonSwitcher";
 import PeopleView from "./PeopleView";
 import ProjectSection from "./ProjectSection";
 import AddProjectForm from "./AddProjectForm";
+import FloatingAdd from "./FloatingAdd";
 import ActivityFeed from "./ActivityFeed";
 import TaskRow from "./TaskRow";
 import ConfirmDialog from "./ConfirmDialog";
 import NamePrompt from "./NamePrompt";
-
-// Wraps a ProjectSection as a sortable item; the grip handle in the header is
-// the drag activator. Keeps the earlier-card-higher z-index for popover layering.
-function SortableProject({
-  project,
-  index,
-  count,
-  ...sectionProps
-}: {
-  project: ProjectWithTasks;
-  index: number;
-  count: number;
-} & Omit<React.ComponentProps<typeof ProjectSection>, "project" | "dragHandleProps" | "setActivatorNodeRef">) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
-    useSortable({ id: project.id });
-
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 50 : count - index,
-    position: "relative",
-    animationDelay: `${index * 60}ms`,
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} className={`rise-in ${isDragging ? "shadow-xl rounded-2xl" : ""}`}>
-      <ProjectSection
-        project={project}
-        dragHandleProps={{ ...attributes, ...listeners }}
-        setActivatorNodeRef={setActivatorNodeRef}
-        {...sectionProps}
-      />
-    </div>
-  );
-}
 
 const PERSON_KEY = "home-tasks:currentPersonId";
 const VIEW_KEY = "home-tasks:view";
@@ -103,18 +52,6 @@ export default function TaskApp({
   const [identityReady, setIdentityReady] = useState(false);
   const [confirm, setConfirm] = useState<Confirm>(null);
   const [seeding, setSeeding] = useState(false);
-  // @dnd-kit generates accessibility ids that differ between server and client,
-  // so only mount the drag tree after hydration to avoid a mismatch warning.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  // Drag-to-reorder sensors: small move threshold on desktop; short press on
-  // touch so the handle drags without hijacking scroll.
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
 
   // Restore "who's using this" + the chosen view from the browser.
   useEffect(() => {
@@ -149,8 +86,6 @@ export default function TaskApp({
     const ae = document.activeElement;
     if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA")) return;
     if (confirm) return;
-    // Don't reshuffle the board out from under an in-progress reorder.
-    if (document.querySelector("[data-reordering]")) return;
     try {
       const [pplRes, projRes, taskRes, actRes] = await Promise.all([
         fetch("/api/people"),
@@ -284,13 +219,12 @@ export default function TaskApp({
     if (!res.ok) refreshAll(); // resync on failure
   }
 
-  async function reorderProjects(event: DragEndEvent) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-
-    const oldIndex = projects.findIndex((p) => p.id === active.id);
-    const newIndex = projects.findIndex((p) => p.id === over.id);
-    if (oldIndex === -1 || newIndex === -1) return;
+  // Move a project one slot up/down (via the arrows shown while editing its
+  // name). Optimistic, then persist the new order.
+  async function moveProject(id: number, dir: -1 | 1) {
+    const oldIndex = projects.findIndex((p) => p.id === id);
+    const newIndex = oldIndex + dir;
+    if (oldIndex === -1 || newIndex < 0 || newIndex >= projects.length) return;
 
     const next = arrayMove(projects, oldIndex, newIndex);
     const prev = projects;
@@ -527,52 +461,30 @@ export default function TaskApp({
             </section>
           )}
 
-          {mounted ? (
-            <DndContext id="project-reorder" sensors={sensors} collisionDetection={closestCenter} onDragEnd={reorderProjects}>
-              <SortableContext items={projects.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-                <div className="space-y-5">
-                  {projects.map((project, i) => (
-                    <SortableProject
-                      key={project.id}
-                      project={project}
-                      index={i}
-                      count={projects.length}
-                      people={people}
-                      currentPersonId={currentPersonId}
-                      onRenameProject={renameProject}
-                      onDeleteProject={(p) => setConfirm({ kind: "project", project: p })}
-                      onSetOngoing={setProjectOngoing}
-                      onAddTask={addTask}
-                      taskHandlers={taskHandlers}
-                      onReorderTasks={reorderTasks}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-          ) : (
-            <div className="space-y-5">
-              {projects.map((project, i) => (
-                <div
-                  key={project.id}
-                  className="rise-in relative"
-                  style={{ animationDelay: `${i * 60}ms`, zIndex: projects.length - i }}
-                >
-                  <ProjectSection
-                    project={project}
-                    people={people}
-                    currentPersonId={currentPersonId}
-                    onRenameProject={renameProject}
-                    onDeleteProject={(p) => setConfirm({ kind: "project", project: p })}
-                    onSetOngoing={setProjectOngoing}
-                    onAddTask={addTask}
-                    taskHandlers={taskHandlers}
-                    onReorderTasks={reorderTasks}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="space-y-5">
+            {projects.map((project, i) => (
+              <div
+                key={project.id}
+                className="rise-in relative"
+                style={{ animationDelay: `${i * 60}ms`, zIndex: projects.length - i }}
+              >
+                <ProjectSection
+                  project={project}
+                  people={people}
+                  currentPersonId={currentPersonId}
+                  onRenameProject={renameProject}
+                  onDeleteProject={(p) => setConfirm({ kind: "project", project: p })}
+                  onSetOngoing={setProjectOngoing}
+                  onAddTask={addTask}
+                  taskHandlers={taskHandlers}
+                  onReorderTasks={reorderTasks}
+                  onMoveProject={moveProject}
+                  isFirst={i === 0}
+                  isLast={i === projects.length - 1}
+                />
+              </div>
+            ))}
+          </div>
 
           {projects.length === 0 && (
             <p className="text-[15px] text-muted italic px-1">
@@ -621,6 +533,16 @@ export default function TaskApp({
 
       {identityReady && currentPersonId === null && (
         <NamePrompt people={people} onPick={pickPerson} onAdd={addPerson} />
+      )}
+
+      {/* Always-visible add — opens a panel with a required project picker. */}
+      {identityReady && currentPersonId !== null && (
+        <FloatingAdd
+          projects={projects.map((p) => ({ id: p.id, name: p.name }))}
+          people={people}
+          currentPersonId={currentPersonId}
+          onAdd={addTask}
+        />
       )}
     </main>
   );
