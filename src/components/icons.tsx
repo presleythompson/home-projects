@@ -32,6 +32,16 @@ export function TrashIcon({ className = "w-[18px] h-[18px]" }: { className?: str
   );
 }
 
+export function ReorderIcon({ className = "w-[18px] h-[18px]" }: { className?: string }) {
+  // Up/down chevrons — a caret-y cue that reads as "reorder / move".
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M8 9l4-4 4 4" />
+      <path d="M8 15l4 4 4-4" />
+    </svg>
+  );
+}
+
 export function PersonIcon({ className = "w-[18px] h-[18px]" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>

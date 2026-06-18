@@ -28,6 +28,7 @@ import type {
 } from "@/lib/types";
 import { normalizeTask, normalizePerson, normalizeProject, normalizeActivity } from "@/lib/util";
 import PersonSwitcher from "./PersonSwitcher";
+import PeopleView from "./PeopleView";
 import ProjectSection from "./ProjectSection";
 import AddProjectForm from "./AddProjectForm";
 import ActivityFeed from "./ActivityFeed";
@@ -71,6 +72,8 @@ function SortableProject({
 }
 
 const PERSON_KEY = "home-tasks:currentPersonId";
+const VIEW_KEY = "home-tasks:view";
+type View = "projects" | "people";
 
 type Confirm =
   | { kind: "task"; task: Task }
@@ -96,6 +99,7 @@ export default function TaskApp({
   const [looseTasks, setLooseTasks] = useState<Task[]>(initialLooseTasks);
   const [activity, setActivity] = useState<Activity[]>(initialActivity);
   const [currentPersonId, setCurrentPersonId] = useState<number | null>(null);
+  const [view, setView] = useState<View>("projects");
   const [identityReady, setIdentityReady] = useState(false);
   const [confirm, setConfirm] = useState<Confirm>(null);
   const [seeding, setSeeding] = useState(false);
@@ -112,18 +116,25 @@ export default function TaskApp({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  // Restore "who's using this" from the browser (then we know whether to prompt).
+  // Restore "who's using this" + the chosen view from the browser.
   useEffect(() => {
     const stored = localStorage.getItem(PERSON_KEY);
     if (stored && initialPeople.some((p) => p.id === Number(stored))) {
       setCurrentPersonId(Number(stored));
     }
+    const storedView = localStorage.getItem(VIEW_KEY);
+    if (storedView === "people" || storedView === "projects") setView(storedView);
     setIdentityReady(true);
   }, [initialPeople]);
 
   function pickPerson(id: number) {
     setCurrentPersonId(id);
     localStorage.setItem(PERSON_KEY, String(id));
+  }
+
+  function pickView(v: View) {
+    setView(v);
+    localStorage.setItem(VIEW_KEY, v);
   }
 
   async function refreshActivity() {
@@ -138,6 +149,8 @@ export default function TaskApp({
     const ae = document.activeElement;
     if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA")) return;
     if (confirm) return;
+    // Don't reshuffle the board out from under an in-progress reorder.
+    if (document.querySelector("[data-reordering]")) return;
     try {
       const [pplRes, projRes, taskRes, actRes] = await Promise.all([
         fetch("/api/people"),
@@ -243,6 +256,32 @@ export default function TaskApp({
   async function deleteProject(project: ProjectWithTasks) {
     setProjects((prev) => prev.filter((p) => p.id !== project.id));
     await fetch(`/api/projects/${project.id}`, { method: "DELETE" });
+  }
+
+  // Reorder a sublist of tasks (one project's list or one person's list).
+  // Optimistically permute the sort_order values those tasks already occupy
+  // (matches the server), then persist. The comparator re-sorts on render so
+  // date precedence holds (cross-date drags snap back).
+  async function reorderTasks(ids: number[]) {
+    const all: Task[] = [...projects.flatMap((p) => p.tasks), ...looseTasks];
+    const byId = new Map(all.map((t) => [t.id, t]));
+    const slots = ids
+      .map((id) => byId.get(id)?.sort_order)
+      .filter((v): v is number => v != null)
+      .sort((a, b) => a - b);
+    const newOrder = new Map<number, number>();
+    ids.forEach((id, k) => {
+      if (slots[k] != null) newOrder.set(id, slots[k]);
+    });
+    const apply = (t: Task) => (newOrder.has(t.id) ? { ...t, sort_order: newOrder.get(t.id)! } : t);
+    setProjects((prev) => prev.map((p) => ({ ...p, tasks: p.tasks.map(apply) })));
+    setLooseTasks((prev) => prev.map(apply));
+
+    const res = await fetch("/api/tasks/reorder", {
+      method: "POST",
+      body: JSON.stringify({ ids }),
+    });
+    if (!res.ok) refreshAll(); // resync on failure
   }
 
   async function reorderProjects(event: DragEndEvent) {
@@ -420,8 +459,44 @@ export default function TaskApp({
         <div className="mt-5 border-t-2 border-[#d8c7a0]" />
       </header>
 
+      {/* View toggle in its own row, right-aligned over the task column, so the
+          content grid below stays top-aligned (Recently done lines up with the
+          first project). */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-7 mb-3">
+        <div className="flex justify-end">
+          <div className="inline-flex rounded-lg overflow-hidden border border-line text-[12px]">
+            <button
+              onClick={() => pickView("projects")}
+              className={`px-3 py-1 transition-colors cursor-pointer ${
+                view === "projects" ? "bg-line/60 text-ink font-medium" : "text-muted hover:text-ink"
+              }`}
+            >
+              By project
+            </button>
+            <button
+              onClick={() => pickView("people")}
+              className={`px-3 py-1 border-l border-line transition-colors cursor-pointer ${
+                view === "people" ? "bg-line/60 text-ink font-medium" : "text-muted hover:text-ink"
+              }`}
+            >
+              By person
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-7 items-start">
-        {/* Projects column */}
+        {/* Main column: by project (default) or grouped by person */}
+        {view === "people" ? (
+          <PeopleView
+            people={people}
+            projects={projects}
+            looseTasks={looseTasks}
+            currentPersonId={currentPersonId}
+            taskHandlers={taskHandlers}
+            onReorderTasks={reorderTasks}
+          />
+        ) : (
         <div className="space-y-5">
           {looseTasks.length > 0 && (
             <section className="bg-paper rounded-2xl shadow-[0_6px_24px_-12px_rgba(80,60,30,0.25)] border border-line px-6 py-4">
@@ -457,6 +532,7 @@ export default function TaskApp({
                       onSetOngoing={setProjectOngoing}
                       onAddTask={addTask}
                       taskHandlers={taskHandlers}
+                      onReorderTasks={reorderTasks}
                     />
                   ))}
                 </div>
@@ -479,6 +555,7 @@ export default function TaskApp({
                     onSetOngoing={setProjectOngoing}
                     onAddTask={addTask}
                     taskHandlers={taskHandlers}
+                    onReorderTasks={reorderTasks}
                   />
                 </div>
               ))}
@@ -495,6 +572,7 @@ export default function TaskApp({
             <AddProjectForm onAdd={addProject} />
           </div>
         </div>
+        )}
 
         {/* Activity column */}
         <aside className="bg-paper rounded-2xl shadow-[0_6px_24px_-12px_rgba(80,60,30,0.25)] border border-line p-5 lg:sticky lg:top-8">

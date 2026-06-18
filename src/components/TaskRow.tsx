@@ -27,6 +27,7 @@ export default function TaskRow({
   onAssign,
   onSetDue,
   onDelete,
+  projectLabel,
 }: {
   task: Task;
   people: Person[];
@@ -36,6 +37,7 @@ export default function TaskRow({
   onAssign: (id: number, personId: number | null) => void;
   onSetDue: (id: number, due: string | null) => void;
   onDelete: (task: Task) => void;
+  projectLabel?: string;
 }) {
   const [editingTitle, setEditingTitle] = useState(false);
   const due = dueLabel(task.due_date);
@@ -50,9 +52,14 @@ export default function TaskRow({
         <input type="checkbox" checked={task.is_done} onChange={() => onToggle(task)} />
       </span>
 
-      {/* Title — click to edit in place */}
-      <span className={`flex-1 min-w-0 text-[16px] leading-6 ${task.is_done ? "line-through text-stone-400" : "text-ink"}`}>
-        <EditableText value={task.title} onSave={(v) => onRename(task.id, v)} onEditingChange={setEditingTitle} />
+      {/* Title — click to edit in place. Optional project tag below (people view). */}
+      <span className="flex-1 min-w-0">
+        <span className={`block text-[16px] leading-6 ${task.is_done ? "line-through text-stone-400" : "text-ink"}`}>
+          <EditableText value={task.title} onSave={(v) => onRename(task.id, v)} onEditingChange={setEditingTitle} />
+        </span>
+        {projectLabel && (
+          <span className="block mt-0.5 text-[12px] text-muted truncate">{projectLabel}</span>
+        )}
       </span>
 
       {/* Date — click to pick */}

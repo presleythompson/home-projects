@@ -26,6 +26,20 @@ export function normalizeProject(p: Project): Project {
   return { ...p, id: num(p.id), is_ongoing: Boolean(p.is_ongoing) };
 }
 
+// Order open tasks by due date: soonest (incl. overdue) first, dated before
+// undated, then by sort_order. due_date is YYYY-MM-DD so string compare is
+// chronological. Shared by the project view and the by-person view.
+export function compareByDue(a: Task, b: Task): number {
+  if (a.due_date && b.due_date) {
+    if (a.due_date !== b.due_date) return a.due_date < b.due_date ? -1 : 1;
+  } else if (a.due_date) {
+    return -1;
+  } else if (b.due_date) {
+    return 1;
+  }
+  return a.sort_order - b.sort_order;
+}
+
 // Coerce ids to numbers and due_date to a clean string.
 export function normalizeTask(task: Task): Task {
   return {

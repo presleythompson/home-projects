@@ -2,11 +2,13 @@
 
 import { useState, type HTMLAttributes } from "react";
 import type { Person, Task, ProjectWithTasks } from "@/lib/types";
+import { compareByDue } from "@/lib/util";
 import EditableText from "./EditableText";
 import ProgressBar from "./ProgressBar";
 import TaskRow from "./TaskRow";
+import SortableTaskList from "./SortableTaskList";
 import AddTaskForm from "./AddTaskForm";
-import { GripIcon, TrashIcon } from "./icons";
+import { GripIcon, TrashIcon, ReorderIcon } from "./icons";
 
 // Completed tasks stay visible for 2 days, then hide (toggleable per project).
 const STALE_MS = 2 * 24 * 60 * 60 * 1000;
@@ -23,6 +25,7 @@ export default function ProjectSection({
   onSetOngoing,
   onAddTask,
   taskHandlers,
+  onReorderTasks,
   dragHandleProps,
   setActivatorNodeRef,
 }: {
@@ -40,11 +43,13 @@ export default function ProjectSection({
     onSetDue: (id: number, due: string | null) => void;
     onDelete: (task: Task) => void;
   };
+  onReorderTasks: (ids: number[]) => void;
   dragHandleProps?: HTMLAttributes<HTMLButtonElement>;
   setActivatorNodeRef?: (el: HTMLElement | null) => void;
 }) {
   const [editingName, setEditingName] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [reordering, setReordering] = useState(false);
   const total = project.tasks.length;
   const doneCount = project.tasks.filter((t) => t.is_done).length;
   const showBar = !project.is_ongoing && total > 0;
@@ -57,24 +62,23 @@ export default function ProjectSection({
       // coerce both so the comparison is safe either way.
       return String(b.completed_at ?? "").localeCompare(String(a.completed_at ?? ""));
     }
-    // Open tasks auto-sort by due date: soonest (incl. overdue) first, dated
-    // before undated. due_date is YYYY-MM-DD, so string compare is chronological.
-    if (a.due_date && b.due_date) {
-      if (a.due_date !== b.due_date) return a.due_date < b.due_date ? -1 : 1;
-    } else if (a.due_date) {
-      return -1;
-    } else if (b.due_date) {
-      return 1;
-    }
-    return a.sort_order - b.sort_order;
+    return compareByDue(a, b);
   });
 
   // Hide completions older than 2 days unless the user expands them.
   const hiddenCount = sortedTasks.filter(isStaleCompleted).length;
-  const visibleTasks = showCompleted ? sortedTasks : sortedTasks.filter((t) => !isStaleCompleted(t));
+  // Open tasks are draggable (sorted by due date); completed ones render static
+  // below (ordered by completion, not reorderable).
+  const openTasks = sortedTasks.filter((t) => !t.is_done);
+  const completedVisible = sortedTasks.filter(
+    (t) => t.is_done && (showCompleted || !isStaleCompleted(t))
+  );
 
   return (
-    <section className="border-b-2 border-[#d8c7a0] pb-5 sm:pb-0 sm:bg-paper sm:rounded-2xl sm:shadow-[0_6px_24px_-12px_rgba(80,60,30,0.25)] sm:border sm:border-line">
+    <section
+      data-reordering={reordering || undefined}
+      className="border-b-2 border-[#d8c7a0] pb-5 sm:pb-0 sm:bg-paper sm:rounded-2xl sm:shadow-[0_6px_24px_-12px_rgba(80,60,30,0.25)] sm:border sm:border-line"
+    >
       <header data-edit-group className="px-0 py-3 border-b border-line/70 sm:px-6 sm:py-4">
         <div className="flex items-start gap-2.5">
           {dragHandleProps && (
@@ -132,19 +136,33 @@ export default function ProjectSection({
         {project.tasks.length === 0 ? (
           <p className="text-[14px] text-muted italic py-1">No tasks yet.</p>
         ) : (
-          <div className="divide-y divide-line/60">
-            {visibleTasks.map((task) => (
-              <TaskRow
-                key={task.id}
-                task={task}
+          <>
+            {openTasks.length > 0 && (
+              <SortableTaskList
+                tasks={openTasks}
                 people={people}
                 currentPersonId={currentPersonId}
-                {...taskHandlers}
+                taskHandlers={taskHandlers}
+                onReorder={onReorderTasks}
+                reordering={reordering}
               />
-            ))}
-          </div>
+            )}
+            {!reordering && completedVisible.length > 0 && (
+              <div className="divide-y divide-line/60">
+                {completedVisible.map((task) => (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    people={people}
+                    currentPersonId={currentPersonId}
+                    {...taskHandlers}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
-        {hiddenCount > 0 && (
+        {!reordering && hiddenCount > 0 && (
           <button
             onClick={() => setShowCompleted((v) => !v)}
             className="mt-1.5 text-[12px] text-stone-400 hover:text-accent-600 transition-colors cursor-pointer"
@@ -152,13 +170,34 @@ export default function ProjectSection({
             {showCompleted ? "Hide completed" : `Show completed (${hiddenCount})`}
           </button>
         )}
-        <div className="pt-1.5">
-          <AddTaskForm
-            people={people}
-            currentPersonId={currentPersonId}
-            onAdd={(input) => onAddTask(project.id, input)}
-          />
-        </div>
+
+        {reordering ? (
+          <div className="pt-2 flex justify-end">
+            <button
+              onClick={() => setReordering(false)}
+              className="text-[13px] font-semibold text-accent-600 hover:text-accent-700 transition-colors cursor-pointer"
+            >
+              Done reordering
+            </button>
+          </div>
+        ) : (
+          <div className="pt-1.5 flex items-center">
+            <AddTaskForm
+              people={people}
+              currentPersonId={currentPersonId}
+              onAdd={(input) => onAddTask(project.id, input)}
+            />
+            {openTasks.length >= 2 && (
+              <button
+                onClick={() => setReordering(true)}
+                className="ml-auto inline-flex items-center gap-1 text-[12px] text-stone-400 hover:text-accent-600 transition-colors cursor-pointer flex-shrink-0"
+              >
+                <ReorderIcon className="w-3.5 h-3.5" />
+                Reorder
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );
