@@ -22,7 +22,9 @@ import NamePrompt from "./NamePrompt";
 
 const PERSON_KEY = "home-tasks:currentPersonId";
 const VIEW_KEY = "home-tasks:view";
+const FILTER_KEY = "home-tasks:filter";
 type View = "projects" | "people";
+type Filter = "all" | "mine";
 
 type Confirm =
   | { kind: "task"; task: Task }
@@ -49,6 +51,7 @@ export default function TaskApp({
   const [activity, setActivity] = useState<Activity[]>(initialActivity);
   const [currentPersonId, setCurrentPersonId] = useState<number | null>(null);
   const [view, setView] = useState<View>("projects");
+  const [filter, setFilter] = useState<Filter>("all");
   const [identityReady, setIdentityReady] = useState(false);
   const [confirm, setConfirm] = useState<Confirm>(null);
   const [seeding, setSeeding] = useState(false);
@@ -61,6 +64,8 @@ export default function TaskApp({
     }
     const storedView = localStorage.getItem(VIEW_KEY);
     if (storedView === "people" || storedView === "projects") setView(storedView);
+    const storedFilter = localStorage.getItem(FILTER_KEY);
+    if (storedFilter === "all" || storedFilter === "mine") setFilter(storedFilter);
     setIdentityReady(true);
   }, [initialPeople]);
 
@@ -72,6 +77,11 @@ export default function TaskApp({
   function pickView(v: View) {
     setView(v);
     localStorage.setItem(VIEW_KEY, v);
+  }
+
+  function pickFilter(f: Filter) {
+    setFilter(f);
+    localStorage.setItem(FILTER_KEY, f);
   }
 
   async function refreshActivity() {
@@ -380,6 +390,18 @@ export default function TaskApp({
     );
   }
 
+  // "My tasks" filter: keep only tasks assigned to the current person. Applies
+  // to both views; FloatingAdd still sees the full project list.
+  const mine = filter === "mine";
+  const matchesFilter = (t: Task) => !mine || t.assignee_id === currentPersonId;
+  // Project view: keep only my tasks, and drop projects I'm not in entirely.
+  const visibleProjects = mine
+    ? projects
+        .map((p) => ({ ...p, tasks: p.tasks.filter(matchesFilter) }))
+        .filter((p) => p.tasks.length > 0)
+    : projects;
+  const visibleLooseTasks = mine ? looseTasks.filter(matchesFilter) : looseTasks;
+
   return (
     <main className="max-w-5xl mx-auto px-5 sm:px-8 py-10 sm:py-14">
       <header className="mb-8">
@@ -404,28 +426,52 @@ export default function TaskApp({
         <div className="mt-5 border-t-2 border-[#d8c7a0]" />
       </header>
 
-      {/* View toggle in its own row, right-aligned over the task column, so the
-          content grid below stays top-aligned (Recently done lines up with the
-          first project). */}
+      {/* Toggle row, sitting over the task column so the content grid below stays
+          top-aligned (Recently done lines up with the first project). FILTER on
+          the left, SORT BY right-aligned over the task column's right edge. */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-7 mb-3">
-        <div className="flex justify-end">
-          <div className="inline-flex rounded-lg overflow-hidden border border-line text-[12px]">
-            <button
-              onClick={() => pickView("projects")}
-              className={`px-3 py-1 transition-colors cursor-pointer ${
-                view === "projects" ? "bg-line/60 text-ink font-medium" : "text-muted hover:text-ink"
-              }`}
-            >
-              By project
-            </button>
-            <button
-              onClick={() => pickView("people")}
-              className={`px-3 py-1 border-l border-line transition-colors cursor-pointer ${
-                view === "people" ? "bg-line/60 text-ink font-medium" : "text-muted hover:text-ink"
-              }`}
-            >
-              By person
-            </button>
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-semibold tracking-[0.18em] text-muted uppercase mb-1">Filter</p>
+            <div className="inline-flex rounded-lg overflow-hidden border border-line text-[12px]">
+              <button
+                onClick={() => pickFilter("all")}
+                className={`px-3 py-1 transition-colors cursor-pointer ${
+                  filter === "all" ? "bg-line/60 text-ink font-medium" : "text-muted hover:text-ink"
+                }`}
+              >
+                All tasks
+              </button>
+              <button
+                onClick={() => pickFilter("mine")}
+                className={`px-3 py-1 border-l border-line transition-colors cursor-pointer ${
+                  filter === "mine" ? "bg-line/60 text-ink font-medium" : "text-muted hover:text-ink"
+                }`}
+              >
+                My tasks
+              </button>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] font-semibold tracking-[0.18em] text-muted uppercase mb-1">Sort by</p>
+            <div className="inline-flex rounded-lg overflow-hidden border border-line text-[12px]">
+              <button
+                onClick={() => pickView("projects")}
+                className={`px-3 py-1 transition-colors cursor-pointer ${
+                  view === "projects" ? "bg-line/60 text-ink font-medium" : "text-muted hover:text-ink"
+                }`}
+              >
+                Project
+              </button>
+              <button
+                onClick={() => pickView("people")}
+                className={`px-3 py-1 border-l border-line transition-colors cursor-pointer ${
+                  view === "people" ? "bg-line/60 text-ink font-medium" : "text-muted hover:text-ink"
+                }`}
+              >
+                Person
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -437,6 +483,7 @@ export default function TaskApp({
             people={people}
             projects={projects}
             looseTasks={looseTasks}
+            onlyPersonId={mine ? currentPersonId : null}
             currentPersonId={currentPersonId}
             taskHandlers={taskHandlers}
             onReorderTasks={reorderTasks}
@@ -444,11 +491,11 @@ export default function TaskApp({
           />
         ) : (
         <div className="space-y-5">
-          {looseTasks.length > 0 && (
+          {visibleLooseTasks.length > 0 && (
             <section className="bg-paper rounded-2xl shadow-[0_6px_24px_-12px_rgba(80,60,30,0.25)] border border-line px-6 py-4">
               <h2 className="font-display text-[18px] font-semibold text-ink mb-1.5">Unfiled</h2>
               <div className="divide-y divide-line/60">
-                {looseTasks.map((task) => (
+                {visibleLooseTasks.map((task) => (
                   <TaskRow
                     key={task.id}
                     task={task}
@@ -462,11 +509,11 @@ export default function TaskApp({
           )}
 
           <div className="space-y-5">
-            {projects.map((project, i) => (
+            {visibleProjects.map((project, i) => (
               <div
                 key={project.id}
                 className="rise-in relative"
-                style={{ animationDelay: `${i * 60}ms`, zIndex: projects.length - i }}
+                style={{ animationDelay: `${i * 60}ms`, zIndex: visibleProjects.length - i }}
               >
                 <ProjectSection
                   project={project}

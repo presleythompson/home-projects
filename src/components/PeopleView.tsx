@@ -21,6 +21,7 @@ export default function PeopleView({
   people,
   projects,
   looseTasks,
+  onlyPersonId,
   currentPersonId,
   taskHandlers,
   onReorderTasks,
@@ -29,6 +30,9 @@ export default function PeopleView({
   people: Person[];
   projects: ProjectWithTasks[];
   looseTasks: Task[];
+  // When set ("My tasks" filter), show only this person's section — no other
+  // people, no Unassigned bucket.
+  onlyPersonId: number | null;
   currentPersonId: number | null;
   taskHandlers: Handlers;
   onReorderTasks: (ids: number[]) => void;
@@ -50,18 +54,25 @@ export default function PeopleView({
       .sort((a, b) => compareByDue(a.task, b.task));
 
   const sections = [
-    ...people.map((person) => ({
-      key: `person-${person.id}`,
-      person: person as Person | null,
-      name: person.name,
-      items: openFor((t) => t.assignee_id === person.id),
-    })),
-    {
-      key: "unassigned",
-      person: null as Person | null,
-      name: "Unassigned",
-      items: openFor((t) => t.assignee_id == null),
-    },
+    ...people
+      .filter((person) => onlyPersonId == null || person.id === onlyPersonId)
+      .map((person) => ({
+        key: `person-${person.id}`,
+        person: person as Person | null,
+        name: person.name,
+        items: openFor((t) => t.assignee_id === person.id),
+      })),
+    // Unassigned bucket is hidden when filtering to a single person's tasks.
+    ...(onlyPersonId == null
+      ? [
+          {
+            key: "unassigned",
+            person: null as Person | null,
+            name: "Unassigned",
+            items: openFor((t) => t.assignee_id == null),
+          },
+        ]
+      : []),
   ];
 
   return (

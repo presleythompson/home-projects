@@ -7,7 +7,7 @@ import ProjectPicker from "./ProjectPicker";
 import DatePicker from "./DatePicker";
 import AssigneePicker from "./AssigneePicker";
 import Avatar from "./Avatar";
-import { CalendarIcon, PersonIcon } from "./icons";
+import { CalendarIcon, PersonIcon, PlusIcon } from "./icons";
 
 const TONE_BADGE: Record<string, string> = {
   overdue: "bg-danger-50 text-danger-700",
@@ -72,9 +72,9 @@ export default function FloatingAdd({
           <button
             onClick={() => setOpen(true)}
             aria-label="Add task"
-            className="pointer-events-auto inline-flex items-center justify-center gap-1.5 bg-accent-500 text-white shadow-[0_6px_20px_-4px_rgba(80,60,30,0.45)] hover:bg-accent-600 transition-colors w-14 h-14 rounded-full text-[28px] leading-none sm:w-auto sm:h-auto sm:px-5 sm:py-3 sm:text-[15px] sm:font-semibold"
+            className="pointer-events-auto inline-flex items-center justify-center gap-1.5 bg-accent-500 text-white shadow-[0_6px_20px_-4px_rgba(80,60,30,0.45)] hover:bg-accent-600 transition-colors w-14 h-14 rounded-full sm:w-auto sm:h-auto sm:px-5 sm:py-3 sm:text-[15px] sm:font-semibold"
           >
-            <span className="sm:hidden">+</span>
+            <PlusIcon className="w-7 h-7 sm:hidden" />
             <span className="hidden sm:inline">+ Add task</span>
           </button>
         </div>
