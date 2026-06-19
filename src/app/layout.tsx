@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 
@@ -20,6 +20,13 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "House & Yard Project List",
   description: "Shared household tasks & projects",
+};
+
+// resizes-content: the on-screen keyboard shrinks the layout viewport (and
+// `fixed inset-0`) to the visible area, so modal overlays stay above the
+// keyboard instead of being anchored under it on mobile.
+export const viewport: Viewport = {
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({

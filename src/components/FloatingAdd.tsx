@@ -84,16 +84,18 @@ export default function FloatingAdd({
       {open && createPortal(
         <div
           data-overlay
-          className="fixed inset-0 z-50 overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-6 sm:pt-16"
           onClick={reset}
         >
           {/* Blur lives on its own layer, not the positioned root: an element
               that is both `position: fixed` and `backdrop-filter` is mispositioned
               by iOS Safari (anchors to the document, not the viewport). */}
           <div className="absolute inset-0 bg-black/25 backdrop-blur-sm" aria-hidden />
-          <div className="relative min-h-full flex items-start justify-center p-4 pt-6 sm:pt-16">
+          {/* The dialog itself is the scroll container (max-h-full), anchored at
+              the top. The overlay does NOT scroll, so autofocusing the input can't
+              make iOS scroll the modal's top off-screen above the keyboard. */}
           <div
-            className="bg-paper rounded-2xl shadow-xl border border-line p-6 w-full max-w-sm"
+            className="relative w-full max-w-sm max-h-full overflow-y-auto bg-paper rounded-2xl shadow-xl border border-line p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="font-display text-[22px] font-semibold text-ink mb-4">Add task</h2>
@@ -162,7 +164,6 @@ export default function FloatingAdd({
                 Add
               </button>
             </div>
-          </div>
           </div>
         </div>,
         document.body

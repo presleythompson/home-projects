@@ -35,7 +35,7 @@ export default function ProjectPicker({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1 z-40 bg-paper rounded-lg shadow-lg border border-stone-100 py-1 min-w-[160px] max-h-[240px] overflow-y-auto">
+        <div className="absolute left-0 top-full mt-1 z-40 bg-paper rounded-lg shadow-lg border border-stone-100 py-1 min-w-[160px] max-h-[240px] overflow-y-auto">
           {projects.map((p) => (
             <button
               key={p.id}
