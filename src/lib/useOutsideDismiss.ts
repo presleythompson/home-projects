@@ -26,6 +26,11 @@ export function useOutsideDismiss(
 
     function onPointerDown(e: PointerEvent) {
       if (isInside(e.target as Node)) return;
+      // Clicks inside a modal overlay (confirm dialog, add-task panel) are real
+      // interactions, not "tap outside to dismiss" gestures — don't swallow
+      // them, or the modal's first button click gets eaten.
+      const target = e.target as Element | null;
+      if (target?.closest?.("[data-overlay]")) return;
       onDismiss();
       const swallow = (ev: Event) => {
         ev.preventDefault();

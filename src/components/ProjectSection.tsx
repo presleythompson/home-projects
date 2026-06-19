@@ -10,8 +10,8 @@ import SortableTaskList from "./SortableTaskList";
 import AddTaskForm from "./AddTaskForm";
 import { TrashIcon, ChevronUpIcon, ChevronDownIcon } from "./icons";
 
-// Completed tasks stay visible for 2 days, then hide (toggleable per project).
-const STALE_MS = 2 * 24 * 60 * 60 * 1000;
+// Completed tasks stay visible for 1 day, then hide (toggleable per project).
+const STALE_MS = 24 * 60 * 60 * 1000;
 function isStaleCompleted(t: Task): boolean {
   return t.is_done && !!t.completed_at && Date.now() - new Date(t.completed_at).getTime() > STALE_MS;
 }

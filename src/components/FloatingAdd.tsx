@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import type { Person } from "@/lib/types";
 import { dueLabel } from "@/lib/util";
 import ProjectPicker from "./ProjectPicker";
@@ -80,11 +81,17 @@ export default function FloatingAdd({
         </div>
       </div>
 
-      {open && (
+      {open && createPortal(
         <div
-          className="fixed inset-0 z-50 bg-black/25 backdrop-blur-sm flex items-start justify-center overflow-y-auto p-4 pt-6 sm:pt-16"
+          data-overlay
+          className="fixed inset-0 z-50 overflow-y-auto"
           onClick={reset}
         >
+          {/* Blur lives on its own layer, not the positioned root: an element
+              that is both `position: fixed` and `backdrop-filter` is mispositioned
+              by iOS Safari (anchors to the document, not the viewport). */}
+          <div className="absolute inset-0 bg-black/25 backdrop-blur-sm" aria-hidden />
+          <div className="relative min-h-full flex items-start justify-center p-4 pt-6 sm:pt-16">
           <div
             className="bg-paper rounded-2xl shadow-xl border border-line p-6 w-full max-w-sm"
             onClick={(e) => e.stopPropagation()}
@@ -156,7 +163,9 @@ export default function FloatingAdd({
               </button>
             </div>
           </div>
-        </div>
+          </div>
+        </div>,
+        document.body
       )}
     </>
   );

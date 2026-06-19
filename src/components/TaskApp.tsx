@@ -432,7 +432,7 @@ export default function TaskApp({
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-7 mb-3">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="text-[10px] font-semibold tracking-[0.18em] text-muted uppercase mb-1">Filter</p>
+            <p className="text-[10px] font-semibold tracking-[0.18em] text-muted uppercase mb-1">Filter by</p>
             <div className="inline-flex rounded-lg overflow-hidden border border-line text-[12px]">
               <button
                 onClick={() => pickFilter("all")}
@@ -546,7 +546,7 @@ export default function TaskApp({
         )}
 
         {/* Activity column */}
-        <aside className="bg-paper rounded-2xl shadow-[0_6px_24px_-12px_rgba(80,60,30,0.25)] border border-line p-5 lg:sticky lg:top-8">
+        <aside className="bg-paper rounded-2xl shadow-[0_6px_24px_-12px_rgba(80,60,30,0.25)] border border-line p-5 pb-24 sm:pb-5 lg:sticky lg:top-8">
           <h2 className="font-display text-[18px] font-semibold text-ink mb-3">Recently done</h2>
           <div className="custom-scroll max-h-[60vh] overflow-y-auto pr-1 -mr-1">
             <ActivityFeed activity={activity} people={people} />
