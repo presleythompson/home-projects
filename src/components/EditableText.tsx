@@ -8,15 +8,19 @@ export default function EditableText({
   onSave,
   className = "",
   onEditingChange,
+  multiline = false,
+  placeholder,
 }: {
   value: string;
   onSave: (newValue: string) => void;
   className?: string;
   onEditingChange?: (editing: boolean) => void;
+  multiline?: boolean;
+  placeholder?: string;
 }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(value);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (editing && inputRef.current) {
@@ -43,34 +47,50 @@ export default function EditableText({
 
   function handleSave() {
     const trimmed = text.trim();
-    if (trimmed && trimmed !== value) onSave(trimmed);
+    // Single-line: only save non-empty changes. Multiline (notes): allow saving
+    // an empty value so notes can be cleared.
+    if (multiline ? trimmed !== value : (trimmed && trimmed !== value)) onSave(trimmed);
     else setText(value);
     setEditing(false);
   }
 
   if (editing) {
-    return (
+    const editClass = `w-full min-w-0 box-border border border-accent-400 rounded px-1.5 py-0.5 outline-none bg-accent-50 ${className}`;
+    const onKeyDown = (e: React.KeyboardEvent) => {
+      // In multiline mode Enter inserts a newline; only single-line saves on Enter.
+      if (e.key === "Enter" && !multiline) handleSave();
+      if (e.key === "Escape") { setText(value); setEditing(false); }
+    };
+    return multiline ? (
+      <textarea
+        ref={inputRef as React.RefObject<HTMLTextAreaElement>}
+        value={text}
+        rows={2}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={handleSave}
+        onKeyDown={onKeyDown}
+        className={`${editClass} resize-y`}
+      />
+    ) : (
       <input
-        ref={inputRef}
+        ref={inputRef as React.RefObject<HTMLInputElement>}
         value={text}
         onChange={(e) => setText(e.target.value)}
         onBlur={handleSave}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") handleSave();
-          if (e.key === "Escape") { setText(value); setEditing(false); }
-        }}
-        className={`w-full min-w-0 box-border border border-accent-400 rounded px-1.5 py-0.5 outline-none bg-accent-50 ${className}`}
+        onKeyDown={onKeyDown}
+        className={editClass}
       />
     );
   }
 
+  const isEmpty = value.length === 0;
   return (
     <span
       onClick={(e) => { e.stopPropagation(); setEditing(true); }}
-      className={`cursor-pointer rounded px-0.5 -mx-0.5 transition-colors hover:bg-accent-50 ${className}`}
+      className={`cursor-pointer rounded px-0.5 -mx-0.5 transition-colors hover:bg-accent-50 ${isEmpty ? "text-muted" : ""} ${className}`}
       title="Click to edit"
     >
-      {value}
+      {isEmpty ? (placeholder ?? "") : value}
     </span>
   );
 }

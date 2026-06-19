@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { arrayMove } from "@dnd-kit/sortable";
 import type {
   Person,
@@ -52,6 +52,10 @@ export default function TaskApp({
   const [currentPersonId, setCurrentPersonId] = useState<number | null>(null);
   const [view, setView] = useState<View>("projects");
   const [filter, setFilter] = useState<Filter>("all");
+  // Things-style edit mode: exactly one task row may be expanded at a time,
+  // tracked here (lifted) since rows live across many lists.
+  const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
+  const expandTask = useCallback((id: number | null) => setExpandedTaskId(id), []);
   const [identityReady, setIdentityReady] = useState(false);
   const [confirm, setConfirm] = useState<Confirm>(null);
   const [seeding, setSeeding] = useState(false);
@@ -335,11 +339,45 @@ export default function TaskApp({
     if (res.ok) replaceTask(normalizeTask(await res.json()));
   }
 
+  // Move a task to a different project. Unlike patchTask (which only mutates
+  // fields in place), this re-buckets the task between projects[].tasks /
+  // looseTasks so it visually moves immediately, then persists.
+  async function changeTaskProject(id: number, newProjectId: number) {
+    const prevProjects = projects;
+    const prevLoose = looseTasks;
+
+    const moving =
+      projects.flatMap((p) => p.tasks).find((t) => t.id === id) ??
+      looseTasks.find((t) => t.id === id);
+    if (!moving || moving.project_id === newProjectId) return;
+
+    const updated = normalizeTask({ ...moving, project_id: newProjectId } as Task);
+
+    // Remove from every bucket, then append to the target project. Order doesn't
+    // matter — ProjectSection re-sorts by due date each render.
+    setProjects((prev) =>
+      prev.map((p) => {
+        const without = p.tasks.filter((t) => t.id !== id);
+        return p.id === newProjectId ? { ...p, tasks: [...without, updated] } : { ...p, tasks: without };
+      })
+    );
+    setLooseTasks((prev) => prev.filter((t) => t.id !== id));
+
+    const res = await fetch(`/api/tasks/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ project_id: newProjectId, actorId: currentPersonId }),
+    });
+    if (res.ok) replaceTask(normalizeTask(await res.json()));
+    else { setProjects(prevProjects); setLooseTasks(prevLoose); } // rollback
+  }
+
   const taskHandlers = {
     onToggle: toggleTask,
     onRename: (id: number, title: string) => patchTask(id, { title }),
     onAssign: (id: number, personId: number | null) => patchTask(id, { assignee_id: personId }),
     onSetDue: (id: number, due: string | null) => patchTask(id, { due_date: due }),
+    onChangeProject: changeTaskProject,
+    onSetNotes: (id: number, notes: string) => patchTask(id, { notes: notes.trim() || null }),
     onDelete: (task: Task) => setConfirm({ kind: "task", task }),
   };
 
@@ -401,6 +439,8 @@ export default function TaskApp({
         .filter((p) => p.tasks.length > 0)
     : projects;
   const visibleLooseTasks = mine ? looseTasks.filter(matchesFilter) : looseTasks;
+  // Full project list for the in-row project picker (not the filtered view).
+  const projectOptions = projects.map((p) => ({ id: p.id, name: p.name }));
 
   return (
     <main className="max-w-5xl mx-auto px-5 sm:px-8 py-10 sm:py-14">
@@ -485,6 +525,8 @@ export default function TaskApp({
             looseTasks={looseTasks}
             onlyPersonId={mine ? currentPersonId : null}
             currentPersonId={currentPersonId}
+            expandedTaskId={expandedTaskId}
+            onExpand={expandTask}
             taskHandlers={taskHandlers}
             onReorderTasks={reorderTasks}
             onAddTask={addTask}
@@ -501,6 +543,9 @@ export default function TaskApp({
                     task={task}
                     people={people}
                     currentPersonId={currentPersonId}
+                    projects={projectOptions}
+                    expanded={task.id === expandedTaskId}
+                    onExpand={expandTask}
                     {...taskHandlers}
                   />
                 ))}
@@ -519,6 +564,9 @@ export default function TaskApp({
                   project={project}
                   people={people}
                   currentPersonId={currentPersonId}
+                  projects={projectOptions}
+                  expandedTaskId={expandedTaskId}
+                  onExpand={expandTask}
                   onRenameProject={renameProject}
                   onDeleteProject={(p) => setConfirm({ kind: "project", project: p })}
                   onSetOngoing={setProjectOngoing}

@@ -20,6 +20,9 @@ export default function ProjectSection({
   project,
   people,
   currentPersonId,
+  projects,
+  expandedTaskId,
+  onExpand,
   onRenameProject,
   onDeleteProject,
   onSetOngoing,
@@ -33,6 +36,9 @@ export default function ProjectSection({
   project: ProjectWithTasks;
   people: Person[];
   currentPersonId: number | null;
+  projects: { id: number; name: string }[];
+  expandedTaskId: number | null;
+  onExpand: (id: number | null) => void;
   onRenameProject: (id: number, name: string) => void;
   onDeleteProject: (project: ProjectWithTasks) => void;
   onSetOngoing: (id: number, isOngoing: boolean) => void;
@@ -42,6 +48,8 @@ export default function ProjectSection({
     onRename: (id: number, title: string) => void;
     onAssign: (id: number, personId: number | null) => void;
     onSetDue: (id: number, due: string | null) => void;
+    onChangeProject: (id: number, projectId: number) => void;
+    onSetNotes: (id: number, notes: string) => void;
     onDelete: (task: Task) => void;
   };
   onReorderTasks: (ids: number[]) => void;
@@ -154,6 +162,9 @@ export default function ProjectSection({
                 tasks={openTasks}
                 people={people}
                 currentPersonId={currentPersonId}
+                projects={projects}
+                expandedTaskId={expandedTaskId}
+                onExpand={onExpand}
                 taskHandlers={taskHandlers}
                 onReorder={onReorderTasks}
               />
@@ -166,6 +177,9 @@ export default function ProjectSection({
                     task={task}
                     people={people}
                     currentPersonId={currentPersonId}
+                    projects={projects}
+                    expanded={task.id === expandedTaskId}
+                    onExpand={onExpand}
                     {...taskHandlers}
                   />
                 ))}

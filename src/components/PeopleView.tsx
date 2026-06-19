@@ -11,6 +11,8 @@ type Handlers = {
   onRename: (id: number, title: string) => void;
   onAssign: (id: number, personId: number | null) => void;
   onSetDue: (id: number, due: string | null) => void;
+  onChangeProject: (id: number, projectId: number) => void;
+  onSetNotes: (id: number, notes: string) => void;
   onDelete: (task: Task) => void;
 };
 
@@ -23,6 +25,8 @@ export default function PeopleView({
   looseTasks,
   onlyPersonId,
   currentPersonId,
+  expandedTaskId,
+  onExpand,
   taskHandlers,
   onReorderTasks,
   onAddTask,
@@ -34,6 +38,8 @@ export default function PeopleView({
   // people, no Unassigned bucket.
   onlyPersonId: number | null;
   currentPersonId: number | null;
+  expandedTaskId: number | null;
+  onExpand: (id: number | null) => void;
   taskHandlers: Handlers;
   onReorderTasks: (ids: number[]) => void;
   onAddTask: (
@@ -110,6 +116,9 @@ export default function PeopleView({
                   tasks={section.items.map((i) => i.task)}
                   people={people}
                   currentPersonId={currentPersonId}
+                  projects={projects.map((p) => ({ id: p.id, name: p.name }))}
+                  expandedTaskId={expandedTaskId}
+                  onExpand={onExpand}
                   taskHandlers={taskHandlers}
                   onReorder={onReorderTasks}
                   projectLabelFor={(t) => labelById.get(t.id)}

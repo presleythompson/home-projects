@@ -27,22 +27,30 @@ type Handlers = {
   onRename: (id: number, title: string) => void;
   onAssign: (id: number, personId: number | null) => void;
   onSetDue: (id: number, due: string | null) => void;
+  onChangeProject: (id: number, projectId: number) => void;
+  onSetNotes: (id: number, notes: string) => void;
   onDelete: (task: Task) => void;
 };
 
-// Each row is a sortable item. The drag activator is the grip that TaskRow shows
-// in place of the checkbox while its title is being edited — so there's no
-// permanent drag affordance, but any open task can be reordered.
+// Each row is a sortable item. The drag activator is the grip TaskRow shows in
+// its expanded edit card — so there's no permanent drag affordance, but any
+// open task can be reordered.
 function SortableTaskRow({
   task,
   people,
   currentPersonId,
+  projects,
+  expandedTaskId,
+  onExpand,
   taskHandlers,
   projectLabel,
 }: {
   task: Task;
   people: Person[];
   currentPersonId: number | null;
+  projects: { id: number; name: string }[];
+  expandedTaskId: number | null;
+  onExpand: (id: number | null) => void;
   taskHandlers: Handlers;
   projectLabel?: string;
 }) {
@@ -50,7 +58,10 @@ function SortableTaskRow({
     useSortable({ id: task.id });
 
   const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
+    // Translate only (not Transform): dnd-kit's Transform includes scaleX/scaleY
+    // for variable-height lists, which vertically squishes the tall expanded card
+    // while dragging. Translate keeps it undistorted.
+    transform: CSS.Translate.toString(transform),
     transition,
     position: "relative",
     zIndex: isDragging ? 30 : undefined,
@@ -63,6 +74,9 @@ function SortableTaskRow({
         task={task}
         people={people}
         currentPersonId={currentPersonId}
+        projects={projects}
+        expanded={task.id === expandedTaskId}
+        onExpand={onExpand}
         projectLabel={projectLabel}
         dragAttributes={attributes}
         dragListeners={listeners}
@@ -77,6 +91,9 @@ export default function SortableTaskList({
   tasks,
   people,
   currentPersonId,
+  projects,
+  expandedTaskId,
+  onExpand,
   taskHandlers,
   onReorder,
   projectLabelFor,
@@ -84,6 +101,9 @@ export default function SortableTaskList({
   tasks: Task[];
   people: Person[];
   currentPersonId: number | null;
+  projects: { id: number; name: string }[];
+  expandedTaskId: number | null;
+  onExpand: (id: number | null) => void;
   taskHandlers: Handlers;
   onReorder: (ids: number[]) => void;
   projectLabelFor?: (task: Task) => string | undefined;
@@ -120,6 +140,9 @@ export default function SortableTaskList({
             task={task}
             people={people}
             currentPersonId={currentPersonId}
+            projects={projects}
+            expanded={task.id === expandedTaskId}
+            onExpand={onExpand}
             projectLabel={projectLabelFor?.(task)}
             {...taskHandlers}
           />
@@ -138,6 +161,9 @@ export default function SortableTaskList({
               task={task}
               people={people}
               currentPersonId={currentPersonId}
+              projects={projects}
+              expandedTaskId={expandedTaskId}
+              onExpand={onExpand}
               taskHandlers={taskHandlers}
               projectLabel={projectLabelFor?.(task)}
             />
