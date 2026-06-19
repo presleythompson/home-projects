@@ -7,6 +7,7 @@ import { dueLabel } from "@/lib/util";
 import ProjectPicker from "./ProjectPicker";
 import DatePicker from "./DatePicker";
 import AssigneePicker from "./AssigneePicker";
+import { PopoverGroup } from "./Popover";
 import Avatar from "./Avatar";
 import { CalendarIcon, PersonIcon, PlusIcon } from "./icons";
 
@@ -112,6 +113,7 @@ export default function FloatingAdd({
               className="w-full rounded-lg px-3 py-2 text-[15px] border border-stone-200 outline-none focus:border-accent-400 bg-paper"
             />
 
+            <PopoverGroup>
             <div className="flex items-center gap-3 mt-3">
               <ProjectPicker projects={projects} value={projectId} onChange={setProjectId} />
 
@@ -147,6 +149,7 @@ export default function FloatingAdd({
                 }
               />
             </div>
+            </PopoverGroup>
 
             <div className="flex gap-2 mt-5">
               <button

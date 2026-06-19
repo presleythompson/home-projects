@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
 import type { Person } from "@/lib/types";
 import Avatar from "./Avatar";
-import { useOutsideDismiss } from "@/lib/useOutsideDismiss";
+import { Popover } from "./Popover";
 
 export default function AssigneePicker({
   people,
@@ -18,40 +17,32 @@ export default function AssigneePicker({
   onAssign: (personId: number | null) => void;
   trigger?: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
   const assignee = people.find((p) => p.id === assigneeId) ?? null;
 
-  useOutsideDismiss(open, ref, () => setOpen(false));
+  const defaultTrigger = assignee ? (
+    <span
+      className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[11px] font-bold ring-1 ring-black/5"
+      style={{ background: assignee.color }}
+    >
+      {assignee.name.charAt(0).toUpperCase()}
+    </span>
+  ) : (
+    <span className="w-6 h-6 rounded-full border border-dashed border-stone-300 text-stone-300 flex items-center justify-center text-[13px] hover:border-accent-400 hover:text-accent-400 transition-colors">
+      +
+    </span>
+  );
 
   return (
-    <span className="relative inline-block align-baseline" ref={ref}>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center cursor-pointer align-baseline"
-        title={assignee ? `Assigned to ${assignee.name}` : "Unassigned — click to assign"}
-      >
-        {trigger ? (
-          trigger
-        ) : assignee ? (
-          <span
-            className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[11px] font-bold ring-1 ring-black/5"
-            style={{ background: assignee.color }}
-          >
-            {assignee.name.charAt(0).toUpperCase()}
-          </span>
-        ) : (
-          <span className="w-6 h-6 rounded-full border border-dashed border-stone-300 text-stone-300 flex items-center justify-center text-[13px] hover:border-accent-400 hover:text-accent-400 transition-colors">
-            +
-          </span>
-        )}
-      </button>
-
-      {open && (
-        <div className="absolute right-0 top-full mt-1 z-40 bg-paper rounded-lg shadow-lg border border-stone-100 py-1 min-w-[172px] sm:min-w-[150px]">
+    <Popover
+      triggerClassName="inline-flex items-center cursor-pointer align-baseline"
+      triggerTitle={assignee ? `Assigned to ${assignee.name}` : "Unassigned — click to assign"}
+      trigger={trigger ?? defaultTrigger}
+    >
+      {(close) => (
+        <div className="bg-paper rounded-lg shadow-lg border border-stone-100 py-1 w-52">
           {currentPersonId != null && currentPersonId !== assigneeId && (
             <button
-              onClick={() => { onAssign(currentPersonId); setOpen(false); }}
+              onClick={() => { onAssign(currentPersonId); close(); }}
               className="w-full text-left px-3.5 py-2 text-[15px] font-medium text-accent-600 hover:bg-accent-50 cursor-pointer sm:px-3 sm:py-1.5 sm:text-[14px]"
             >
               Assign to me
@@ -60,7 +51,7 @@ export default function AssigneePicker({
           {people.map((p) => (
             <button
               key={p.id}
-              onClick={() => { onAssign(p.id); setOpen(false); }}
+              onClick={() => { onAssign(p.id); close(); }}
               className={`w-full text-left px-3.5 py-2 text-[15px] flex items-center gap-2.5 hover:bg-stone-50 cursor-pointer sm:px-3 sm:py-1.5 sm:text-[14px] sm:gap-2 ${
                 p.id === assigneeId ? "font-semibold" : "text-stone-600"
               }`}
@@ -71,7 +62,7 @@ export default function AssigneePicker({
           ))}
           {assigneeId != null && (
             <button
-              onClick={() => { onAssign(null); setOpen(false); }}
+              onClick={() => { onAssign(null); close(); }}
               className="w-full text-left px-3.5 py-2 text-[15px] text-stone-400 hover:bg-stone-50 border-t border-stone-100 mt-1 cursor-pointer sm:px-3 sm:py-1.5 sm:text-[14px]"
             >
               Unassign
@@ -79,6 +70,6 @@ export default function AssigneePicker({
           )}
         </div>
       )}
-    </span>
+    </Popover>
   );
 }

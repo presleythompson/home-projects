@@ -7,6 +7,7 @@ import { dueLabel } from "@/lib/util";
 import DatePicker from "./DatePicker";
 import AssigneePicker from "./AssigneePicker";
 import ProjectPicker from "./ProjectPicker";
+import { PopoverGroup } from "./Popover";
 import Avatar from "./Avatar";
 import { CalendarIcon, PersonIcon } from "./icons";
 
@@ -95,6 +96,7 @@ export default function AddTaskForm({
   const assignee = people.find((p) => p.id === assigneeId) ?? null;
 
   return (
+    <PopoverGroup>
     <div ref={ref} className="flex flex-wrap items-center gap-2 py-1">
       <input
         autoFocus
@@ -158,5 +160,6 @@ export default function AddTaskForm({
         Add
       </button>
     </div>
+    </PopoverGroup>
   );
 }

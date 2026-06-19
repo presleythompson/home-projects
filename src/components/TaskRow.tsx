@@ -9,6 +9,7 @@ import EditableText from "./EditableText";
 import ProjectPicker from "./ProjectPicker";
 import AssigneePicker from "./AssigneePicker";
 import DatePicker from "./DatePicker";
+import { PopoverGroup } from "./Popover";
 import Avatar from "./Avatar";
 import { CalendarIcon, PersonIcon, TrashIcon, GripIcon } from "./icons";
 
@@ -165,6 +166,7 @@ export default function TaskRow({
           </div>
 
           {/* Control row — change project / date / person (each opens on its own tap). */}
+          <PopoverGroup>
           <div className="mt-2.5 flex flex-wrap items-center gap-2.5">
             <ProjectPicker
               projects={projects}
@@ -209,6 +211,7 @@ export default function TaskRow({
               }
             />
           </div>
+          </PopoverGroup>
         </div>
       </div>
     </div>

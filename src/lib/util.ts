@@ -40,6 +40,20 @@ export function compareByDue(a: Task, b: Task): number {
   return a.sort_order - b.sort_order;
 }
 
+// Completed tasks stay visible for 1 day after completion, then hide behind a
+// per-section "Show completed" toggle. Shared by the project & person views.
+export const COMPLETED_STALE_MS = 24 * 60 * 60 * 1000;
+export function isStaleCompleted(t: Task): boolean {
+  return (
+    t.is_done && !!t.completed_at && Date.now() - new Date(t.completed_at).getTime() > COMPLETED_STALE_MS
+  );
+}
+// Most-recently-completed first. completed_at may be a Date (server) or string
+// (optimistic), so coerce both before comparing.
+export function compareByCompleted(a: Task, b: Task): number {
+  return String(b.completed_at ?? "").localeCompare(String(a.completed_at ?? ""));
+}
+
 // Coerce ids to numbers and due_date to a clean string.
 export function normalizeTask(task: Task): Task {
   return {

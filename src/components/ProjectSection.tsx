@@ -2,19 +2,13 @@
 
 import { useState } from "react";
 import type { Person, Task, ProjectWithTasks } from "@/lib/types";
-import { compareByDue } from "@/lib/util";
+import { compareByDue, compareByCompleted, isStaleCompleted } from "@/lib/util";
 import EditableText from "./EditableText";
 import ProgressBar from "./ProgressBar";
 import TaskRow from "./TaskRow";
 import SortableTaskList from "./SortableTaskList";
 import AddTaskForm from "./AddTaskForm";
 import { TrashIcon, ChevronUpIcon, ChevronDownIcon } from "./icons";
-
-// Completed tasks stay visible for 1 day, then hide (toggleable per project).
-const STALE_MS = 24 * 60 * 60 * 1000;
-function isStaleCompleted(t: Task): boolean {
-  return t.is_done && !!t.completed_at && Date.now() - new Date(t.completed_at).getTime() > STALE_MS;
-}
 
 export default function ProjectSection({
   project,
