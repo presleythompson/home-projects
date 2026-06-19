@@ -35,6 +35,7 @@ export async function DELETE(
     // declared ON DELETE SET NULL — an older live DB may have created these
     // constraints without it, which would make the delete fail with a FK error.
     await sql`UPDATE tasks SET assignee_id = NULL WHERE assignee_id = ${id}`;
+    await sql`UPDATE tasks SET assignee_ids = array_remove(assignee_ids, ${Number(id)}) WHERE ${Number(id)} = ANY(assignee_ids)`;
     await sql`UPDATE tasks SET completed_by = NULL WHERE completed_by = ${id}`;
     await sql`UPDATE activity SET person_id = NULL WHERE person_id = ${id}`;
     await sql`DELETE FROM people WHERE id = ${id}`;

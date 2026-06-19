@@ -23,7 +23,7 @@ export interface Task {
   title: string;
   notes: string | null;
   due_date: string | null; // YYYY-MM-DD
-  assignee_id: number | null;
+  assignee_ids: number[];
   is_done: boolean;
   completed_at: string | null;
   completed_by: number | null;

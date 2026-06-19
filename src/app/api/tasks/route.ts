@@ -9,7 +9,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const sql = getDb();
-  const { project_id, title, due_date, assignee_id, notes } = await req.json();
+  const { project_id, title, due_date, assignee_ids, notes } = await req.json();
 
   const maxOrder = await sql`
     SELECT COALESCE(MAX(sort_order), -1) as max_order
@@ -19,13 +19,13 @@ export async function POST(req: NextRequest) {
   const sort_order = (maxOrder[0]?.max_order ?? -1) + 1;
 
   const rows = await sql`
-    INSERT INTO tasks (project_id, title, notes, due_date, assignee_id, sort_order)
+    INSERT INTO tasks (project_id, title, notes, due_date, assignee_ids, sort_order)
     VALUES (
       ${project_id ?? null},
       ${title},
       ${notes ?? null},
       ${due_date ?? null},
-      ${assignee_id ?? null},
+      ${assignee_ids ?? []},
       ${sort_order}
     )
     RETURNING *

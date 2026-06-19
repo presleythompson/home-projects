@@ -10,7 +10,7 @@ import ProjectPicker from "./ProjectPicker";
 import AssigneePicker from "./AssigneePicker";
 import DatePicker from "./DatePicker";
 import { PopoverGroup } from "./Popover";
-import Avatar from "./Avatar";
+import AvatarStack from "./AvatarStack";
 import { CalendarIcon, PersonIcon, TrashIcon, GripIcon } from "./icons";
 
 // Warm→cool urgency gradient: terracotta (overdue) → deep amber (today) →
@@ -31,7 +31,8 @@ export default function TaskRow({
   onExpand,
   onToggle,
   onRename,
-  onAssign,
+  onToggleAssignee,
+  onClearAssignees,
   onSetDue,
   onChangeProject,
   onSetNotes,
@@ -51,7 +52,8 @@ export default function TaskRow({
   onExpand: (id: number | null) => void;
   onToggle: (task: Task) => void;
   onRename: (id: number, title: string) => void;
-  onAssign: (id: number, personId: number | null) => void;
+  onToggleAssignee: (id: number, personId: number) => void;
+  onClearAssignees: (id: number) => void;
   onSetDue: (id: number, due: string | null) => void;
   onChangeProject: (id: number, projectId: number) => void;
   onSetNotes: (id: number, notes: string) => void;
@@ -69,7 +71,7 @@ export default function TaskRow({
   useOutsideDismiss(expanded, rowRef, () => onExpand(null));
 
   const due = dueLabel(task.due_date);
-  const assignee = people.find((p) => p.id === task.assignee_id) ?? null;
+  const assignees = people.filter((p) => task.assignee_ids.includes(p.id));
   const showGrip = expanded && !!dragListeners;
 
   // --- Collapsed: a compact strip. Tap anywhere (but the checkbox) to expand.
@@ -105,7 +107,7 @@ export default function TaskRow({
               {due.text}
             </span>
           )}
-          {assignee && <Avatar person={assignee} size={24} className="flex-shrink-0" />}
+          <AvatarStack people={assignees} size={24} className="flex-shrink-0" />
         </button>
       </div>
     );
@@ -194,12 +196,13 @@ export default function TaskRow({
 
             <AssigneePicker
               people={people}
-              assigneeId={task.assignee_id}
+              assigneeIds={task.assignee_ids}
               currentPersonId={currentPersonId}
-              onAssign={(pid) => onAssign(task.id, pid)}
+              onToggle={(pid) => onToggleAssignee(task.id, pid)}
+              onClear={() => onClearAssignees(task.id)}
               trigger={
-                assignee ? (
-                  <Avatar person={assignee} size={24} />
+                assignees.length > 0 ? (
+                  <AvatarStack people={assignees} size={24} />
                 ) : (
                   <span
                     className="w-6 h-6 text-stone-400 flex items-center justify-center hover:text-accent-400 transition-colors"

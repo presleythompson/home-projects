@@ -274,7 +274,7 @@ export default function TaskApp({
   // by-person view); it lands in looseTasks rather than a project.
   async function addTask(
     projectId: number | null,
-    input: { title: string; due_date: string | null; assignee_id: number | null }
+    input: { title: string; due_date: string | null; assignee_ids: number[] }
   ) {
     const res = await fetch("/api/tasks", {
       method: "POST",
@@ -371,10 +371,22 @@ export default function TaskApp({
     else { setProjects(prevProjects); setLooseTasks(prevLoose); } // rollback
   }
 
+  // Toggle a person on/off a task's assignee list (computed from current state),
+  // then persist the full array via patchTask's optimistic + reconcile path.
+  function toggleAssignee(id: number, personId: number) {
+    const t = [...projects.flatMap((p) => p.tasks), ...looseTasks].find((x) => x.id === id);
+    if (!t) return;
+    const next = t.assignee_ids.includes(personId)
+      ? t.assignee_ids.filter((x) => x !== personId)
+      : [...t.assignee_ids, personId];
+    patchTask(id, { assignee_ids: next });
+  }
+
   const taskHandlers = {
     onToggle: toggleTask,
     onRename: (id: number, title: string) => patchTask(id, { title }),
-    onAssign: (id: number, personId: number | null) => patchTask(id, { assignee_id: personId }),
+    onToggleAssignee: toggleAssignee,
+    onClearAssignees: (id: number) => patchTask(id, { assignee_ids: [] }),
     onSetDue: (id: number, due: string | null) => patchTask(id, { due_date: due }),
     onChangeProject: changeTaskProject,
     onSetNotes: (id: number, notes: string) => patchTask(id, { notes: notes.trim() || null }),
@@ -431,7 +443,7 @@ export default function TaskApp({
   // "My tasks" filter: keep only tasks assigned to the current person. Applies
   // to both views; FloatingAdd still sees the full project list.
   const mine = filter === "mine";
-  const matchesFilter = (t: Task) => !mine || t.assignee_id === currentPersonId;
+  const matchesFilter = (t: Task) => !mine || (currentPersonId != null && t.assignee_ids.includes(currentPersonId));
   // Project view: keep only my tasks, and drop projects I'm not in entirely.
   const visibleProjects = mine
     ? projects

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 
-// Edit a task's fields: title, notes, due_date, assignee_id, project_id.
+// Edit a task's fields: title, notes, due_date, assignee_ids, project_id.
 // Any subset may be sent.
 export async function PATCH(
   req: NextRequest,
@@ -10,7 +10,7 @@ export async function PATCH(
   const sql = getDb();
   const { id } = await params;
   const body = await req.json();
-  const { title, notes, due_date, assignee_id, project_id } = body;
+  const { title, notes, due_date, assignee_ids, project_id } = body;
 
   if (title !== undefined) {
     await sql`UPDATE tasks SET title = ${title} WHERE id = ${id}`;
@@ -24,8 +24,8 @@ export async function PATCH(
   if (project_id !== undefined) {
     await sql`UPDATE tasks SET project_id = ${project_id ?? null} WHERE id = ${id}`;
   }
-  if (assignee_id !== undefined) {
-    await sql`UPDATE tasks SET assignee_id = ${assignee_id ?? null} WHERE id = ${id}`;
+  if (assignee_ids !== undefined) {
+    await sql`UPDATE tasks SET assignee_ids = ${assignee_ids ?? []} WHERE id = ${id}`;
   }
 
   const rows = await sql`SELECT * FROM tasks WHERE id = ${id}`;

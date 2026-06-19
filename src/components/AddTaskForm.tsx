@@ -8,7 +8,7 @@ import DatePicker from "./DatePicker";
 import AssigneePicker from "./AssigneePicker";
 import ProjectPicker from "./ProjectPicker";
 import { PopoverGroup } from "./Popover";
-import Avatar from "./Avatar";
+import AvatarStack from "./AvatarStack";
 import { CalendarIcon, PersonIcon } from "./icons";
 
 const TONE_BADGE: Record<string, string> = {
@@ -22,7 +22,7 @@ export default function AddTaskForm({
   people,
   currentPersonId,
   onAdd,
-  defaultAssigneeId = null,
+  defaultAssigneeIds = [],
   projects,
   showAssignee = true,
 }: {
@@ -31,11 +31,11 @@ export default function AddTaskForm({
   onAdd: (input: {
     title: string;
     due_date: string | null;
-    assignee_id: number | null;
+    assignee_ids: number[];
     project_id?: number | null;
   }) => void;
-  // Pre-fill the assignee (e.g. the person whose section you're adding under).
-  defaultAssigneeId?: number | null;
+  // Pre-fill the assignees (e.g. the person whose section you're adding under).
+  defaultAssigneeIds?: number[];
   // When provided, a project picker is shown (used in the by-person view, where
   // there's no implied project). Omitted in the project view.
   projects?: { id: number; name: string }[];
@@ -46,7 +46,9 @@ export default function AddTaskForm({
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [due, setDue] = useState<string | null>(null);
-  const [assigneeId, setAssigneeId] = useState<number | null>(defaultAssigneeId);
+  const [assigneeIds, setAssigneeIds] = useState<number[]>(defaultAssigneeIds);
+  const toggleAssignee = (pid: number) =>
+    setAssigneeIds((prev) => (prev.includes(pid) ? prev.filter((x) => x !== pid) : [...prev, pid]));
   // A project is required when the picker is shown (by-person view). Pre-select
   // it if there's only one project; otherwise the user must choose.
   const initialProjectId = projects && projects.length === 1 ? projects[0].id : null;
@@ -63,7 +65,7 @@ export default function AddTaskForm({
     onAdd({
       title: trimmed,
       due_date: due,
-      assignee_id: assigneeId,
+      assignee_ids: assigneeIds,
       ...(projects ? { project_id: projectId } : {}),
     });
     reset();
@@ -72,7 +74,7 @@ export default function AddTaskForm({
   function reset() {
     setTitle("");
     setDue(null);
-    setAssigneeId(defaultAssigneeId);
+    setAssigneeIds(defaultAssigneeIds);
     setProjectId(initialProjectId);
     setOpen(false);
   }
@@ -93,7 +95,7 @@ export default function AddTaskForm({
   }
 
   const due_ = dueLabel(due);
-  const assignee = people.find((p) => p.id === assigneeId) ?? null;
+  const assignees = people.filter((p) => assigneeIds.includes(p.id));
 
   return (
     <PopoverGroup>
@@ -136,12 +138,13 @@ export default function AddTaskForm({
       {showAssignee && (
         <AssigneePicker
           people={people}
-          assigneeId={assigneeId}
+          assigneeIds={assigneeIds}
           currentPersonId={currentPersonId}
-          onAssign={setAssigneeId}
+          onToggle={toggleAssignee}
+          onClear={() => setAssigneeIds([])}
           trigger={
-            assignee ? (
-              <Avatar person={assignee} size={24} />
+            assignees.length > 0 ? (
+              <AvatarStack people={assignees} size={24} />
             ) : (
               <span className="w-6 h-6 text-stone-400 flex items-center justify-center hover:text-accent-400 transition-colors" title="Assign someone">
                 <PersonIcon />

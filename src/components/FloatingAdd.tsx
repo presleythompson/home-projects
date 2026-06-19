@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Person } from "@/lib/types";
 import { dueLabel } from "@/lib/util";
@@ -8,7 +8,7 @@ import ProjectPicker from "./ProjectPicker";
 import DatePicker from "./DatePicker";
 import AssigneePicker from "./AssigneePicker";
 import { PopoverGroup } from "./Popover";
-import Avatar from "./Avatar";
+import AvatarStack from "./AvatarStack";
 import { CalendarIcon, PersonIcon, PlusIcon } from "./icons";
 
 const TONE_BADGE: Record<string, string> = {
@@ -31,7 +31,7 @@ export default function FloatingAdd({
   currentPersonId: number | null;
   onAdd: (
     projectId: number,
-    input: { title: string; due_date: string | null; assignee_id: number | null }
+    input: { title: string; due_date: string | null; assignee_ids: number[] }
   ) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -40,7 +40,32 @@ export default function FloatingAdd({
     projects.length === 1 ? projects[0].id : null
   );
   const [due, setDue] = useState<string | null>(null);
-  const [assigneeId, setAssigneeId] = useState<number | null>(null);
+  const [assigneeIds, setAssigneeIds] = useState<number[]>([]);
+  const toggleAssignee = (pid: number) =>
+    setAssigneeIds((prev) => (prev.includes(pid) ? prev.filter((x) => x !== pid) : [...prev, pid]));
+
+  // Lock background scroll while the panel is open. On iOS this is essential:
+  // focusing the title input would otherwise make Safari scroll the document,
+  // which drags the `position: fixed` panel off-screen. Freezing the body (and
+  // restoring scroll on close) keeps the panel pinned to the viewport.
+  useEffect(() => {
+    if (!open) return;
+    const y = window.scrollY;
+    const body = document.body;
+    body.style.position = "fixed";
+    body.style.top = `-${y}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+    return () => {
+      body.style.position = "";
+      body.style.top = "";
+      body.style.left = "";
+      body.style.right = "";
+      body.style.width = "";
+      window.scrollTo(0, y);
+    };
+  }, [open]);
 
   // Nothing to file into → no point showing the button.
   if (projects.length === 0) return null;
@@ -49,19 +74,19 @@ export default function FloatingAdd({
     setTitle("");
     setProjectId(projects.length === 1 ? projects[0].id : null);
     setDue(null);
-    setAssigneeId(null);
+    setAssigneeIds([]);
     setOpen(false);
   }
 
   function submit() {
     const trimmed = title.trim();
     if (!trimmed || projectId == null) return;
-    onAdd(projectId, { title: trimmed, due_date: due, assignee_id: assigneeId });
+    onAdd(projectId, { title: trimmed, due_date: due, assignee_ids: assigneeIds });
     reset();
   }
 
   const due_ = dueLabel(due);
-  const assignee = people.find((p) => p.id === assigneeId) ?? null;
+  const assignees = people.filter((p) => assigneeIds.includes(p.id));
 
   return (
     <>
@@ -135,12 +160,13 @@ export default function FloatingAdd({
 
               <AssigneePicker
                 people={people}
-                assigneeId={assigneeId}
+                assigneeIds={assigneeIds}
                 currentPersonId={currentPersonId}
-                onAssign={setAssigneeId}
+                onToggle={toggleAssignee}
+                onClear={() => setAssigneeIds([])}
                 trigger={
-                  assignee ? (
-                    <Avatar person={assignee} size={24} />
+                  assignees.length > 0 ? (
+                    <AvatarStack people={assignees} size={24} />
                   ) : (
                     <span className="w-6 h-6 text-stone-400 flex items-center justify-center hover:text-accent-400 transition-colors" title="Assign someone">
                       <PersonIcon />

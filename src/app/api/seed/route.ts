@@ -44,6 +44,7 @@ export async function POST() {
       due_date DATE,
       recurrence JSONB,
       assignee_id BIGINT REFERENCES people(id) ON DELETE SET NULL,
+      assignee_ids BIGINT[] NOT NULL DEFAULT '{}',
       is_done BOOLEAN NOT NULL DEFAULT false,
       completed_at TIMESTAMPTZ,
       completed_by BIGINT REFERENCES people(id) ON DELETE SET NULL,
@@ -60,6 +61,13 @@ export async function POST() {
       detail TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
+  `;
+  // Multiple assignees: array column replaces the single assignee_id (kept for
+  // rollback). Backfill is idempotent — only fills rows that haven't been yet.
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS assignee_ids BIGINT[] NOT NULL DEFAULT '{}'`;
+  await sql`
+    UPDATE tasks SET assignee_ids = ARRAY[assignee_id]
+    WHERE assignee_id IS NOT NULL AND (assignee_ids IS NULL OR assignee_ids = '{}')
   `;
   await sql`CREATE INDEX IF NOT EXISTS tasks_project_id_idx ON tasks(project_id)`;
   await sql`CREATE INDEX IF NOT EXISTS activity_created_at_idx ON activity(created_at DESC)`;

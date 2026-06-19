@@ -36,11 +36,12 @@ export default function ProjectSection({
   onRenameProject: (id: number, name: string) => void;
   onDeleteProject: (project: ProjectWithTasks) => void;
   onSetOngoing: (id: number, isOngoing: boolean) => void;
-  onAddTask: (projectId: number, input: { title: string; due_date: string | null; assignee_id: number | null }) => void;
+  onAddTask: (projectId: number, input: { title: string; due_date: string | null; assignee_ids: number[] }) => void;
   taskHandlers: {
     onToggle: (task: Task) => void;
     onRename: (id: number, title: string) => void;
-    onAssign: (id: number, personId: number | null) => void;
+    onToggleAssignee: (id: number, personId: number) => void;
+    onClearAssignees: (id: number) => void;
     onSetDue: (id: number, due: string | null) => void;
     onChangeProject: (id: number, projectId: number) => void;
     onSetNotes: (id: number, notes: string) => void;

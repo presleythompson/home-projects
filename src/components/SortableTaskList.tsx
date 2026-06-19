@@ -25,7 +25,8 @@ import TaskRow from "./TaskRow";
 type Handlers = {
   onToggle: (task: Task) => void;
   onRename: (id: number, title: string) => void;
-  onAssign: (id: number, personId: number | null) => void;
+  onToggleAssignee: (id: number, personId: number) => void;
+  onClearAssignees: (id: number) => void;
   onSetDue: (id: number, due: string | null) => void;
   onChangeProject: (id: number, projectId: number) => void;
   onSetNotes: (id: number, notes: string) => void;

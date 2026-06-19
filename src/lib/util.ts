@@ -9,6 +9,11 @@ function num(v: unknown): number {
 function numOrNull(v: unknown): number | null {
   return v === null || v === undefined ? null : Number(v);
 }
+// Postgres BIGINT[] comes back as an array of strings (both drivers); coerce
+// each element to a number. Anything non-array (null/undefined) → [].
+function numArray(v: unknown): number[] {
+  return Array.isArray(v) ? v.map(Number) : [];
+}
 
 // Postgres DATE can arrive as a JS Date (local pg driver) or a string (Neon).
 // Normalize anything date-ish to a plain "YYYY-MM-DD" string, or null.
@@ -60,7 +65,7 @@ export function normalizeTask(task: Task): Task {
     ...task,
     id: num(task.id),
     project_id: numOrNull(task.project_id),
-    assignee_id: numOrNull(task.assignee_id),
+    assignee_ids: numArray(task.assignee_ids),
     completed_by: numOrNull(task.completed_by),
     due_date: ymd(task.due_date),
   };

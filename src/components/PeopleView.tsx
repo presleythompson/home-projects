@@ -11,7 +11,8 @@ import AddTaskForm from "./AddTaskForm";
 type Handlers = {
   onToggle: (task: Task) => void;
   onRename: (id: number, title: string) => void;
-  onAssign: (id: number, personId: number | null) => void;
+  onToggleAssignee: (id: number, personId: number) => void;
+  onClearAssignees: (id: number) => void;
   onSetDue: (id: number, due: string | null) => void;
   onChangeProject: (id: number, projectId: number) => void;
   onSetNotes: (id: number, notes: string) => void;
@@ -55,7 +56,7 @@ export default function PeopleView({
   onReorderTasks: (ids: number[]) => void;
   onAddTask: (
     projectId: number | null,
-    input: { title: string; due_date: string | null; assignee_id: number | null }
+    input: { title: string; due_date: string | null; assignee_ids: number[] }
   ) => void;
 }) {
   // Every task carries its project name for context once grouping is by person.
@@ -84,8 +85,8 @@ export default function PeopleView({
         key: `person-${person.id}`,
         person: person as Person | null,
         name: person.name,
-        open: openFor((t) => t.assignee_id === person.id),
-        completed: completedFor((t) => t.assignee_id === person.id),
+        open: openFor((t) => t.assignee_ids.includes(person.id)),
+        completed: completedFor((t) => t.assignee_ids.includes(person.id)),
       })),
     // Unassigned bucket is hidden when filtering to a single person's tasks.
     ...(onlyPersonId == null
@@ -94,8 +95,8 @@ export default function PeopleView({
             key: "unassigned",
             person: null as Person | null,
             name: "Unassigned",
-            open: openFor((t) => t.assignee_id == null),
-            completed: completedFor((t) => t.assignee_id == null),
+            open: openFor((t) => t.assignee_ids.length === 0),
+            completed: completedFor((t) => t.assignee_ids.length === 0),
           },
         ]
       : []),
@@ -149,7 +150,7 @@ function PersonSection({
   onReorderTasks: (ids: number[]) => void;
   onAddTask: (
     projectId: number | null,
-    input: { title: string; due_date: string | null; assignee_id: number | null }
+    input: { title: string; due_date: string | null; assignee_ids: number[] }
   ) => void;
   labelById: Map<number, string>;
 }) {
@@ -230,7 +231,7 @@ function PersonSection({
           <AddTaskForm
             people={people}
             currentPersonId={currentPersonId}
-            defaultAssigneeId={section.person?.id ?? null}
+            defaultAssigneeIds={section.person ? [section.person.id] : []}
             showAssignee={false}
             projects={projectOptions}
             onAdd={(input) => onAddTask(input.project_id ?? null, input)}
