@@ -60,7 +60,10 @@ export function Popover({
       const pw = panel?.offsetWidth ?? 0;
       const ph = panel?.offsetHeight ?? 0;
       const M = 8;
-      let left = r.left;
+      // On mobile, center the panel horizontally on screen; on larger screens
+      // anchor it to the trigger's left edge. Either way clamp it on-screen.
+      const isMobile = window.matchMedia("(max-width: 639px)").matches;
+      let left = isMobile && pw ? (window.innerWidth - pw) / 2 : r.left;
       if (pw) left = Math.max(M, Math.min(left, window.innerWidth - pw - M));
       let top = r.bottom + 4;
       if (ph && top + ph > window.innerHeight - M) {
